@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restaurant Portfolio Dashboard</title>
+<style>
+  :root {
+    --primary: #1a1a2e;
+    --secondary: #16213e;
+    --accent: #0f3460;
+    --highlight: #e94560;
+    --text: #eaeaea;
+    --text-muted: #a0a0b0;
+    --border: #2a2a4a;
+    --card-bg: #1e1e3a;
+    --tab-active: #e94560;
+    --green: #00c897;
+    --red: #ff4757;
+    --yellow: #ffa502;
+    --blue: #1e90ff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--primary); color: var(--text); font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; }
+  
+  .header { background: linear-gradient(135deg, #1a1a2e, #0f3460); padding: 16px 24px; border-bottom: 2px solid var(--highlight); display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 20px; font-weight: 700; color: #fff; }
+  .header .subtitle { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+  .header-badge { background: var(--highlight); color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  
+  .tabs { background: var(--secondary); border-bottom: 2px solid var(--border); display: flex; gap: 0; overflow-x: auto; }
+  .tab { padding: 12px 20px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 600; color: var(--text-muted); white-space: nowrap; transition: all 0.2s; }
+  .tab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+  .tab.active { color: var(--tab-active); border-bottom-color: var(--tab-active); }
+  
+  .content { padding: 20px 24px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  
+  .section-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .section-title::before { content: ""; width: 4px; height: 18px; background: var(--highlight); display: inline-block; border-radius: 2px; }
+  
+  .filter-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .filter-label { color: var(--text-muted); font-size: 12px; font-weight: 600; }
+  .filter-select { background: var(--secondary); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; outline: none; min-width: 180px; }
+  .filter-select:focus { border-color: var(--highlight); }
+  
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  th { background: #0f3460; color: #fff; padding: 8px 10px; text-align: right; font-size: 11px; font-weight: 600; white-space: nowrap; border: 1px solid var(--border); position: sticky; top: 0; z-index: 1; }
+  th:first-child, th:nth-child(2) { text-align: left; }
+  td { padding: 7px 10px; text-align: right; border: 1px solid var(--border); font-size: 12px; color: var(--text); }
+  td:first-child { text-align: left; font-weight: 600; color: #fff; }
+  td:nth-child(2) { text-align: left; }
+  tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+  tr:hover { background: rgba(255,255,255,0.05); }
+  tr.total-row { background: rgba(15,52,96,0.5) !important; font-weight: 700; border-top: 2px solid var(--highlight); }
+  tr.total-row td { color: #fff; font-weight: 700; }
+  
+  .mom-positive { color: var(--green); font-weight: 600; }
+  .mom-negative { color: var(--red); font-weight: 600; }
+  .mom-neutral { color: var(--text-muted); }
+  
+  .metric-header { background: rgba(233,69,96,0.15); }
+  .metric-header-blue { background: rgba(30,144,255,0.15); }
+  .group-header { background: rgba(255,165,0,0.1); }
+  
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .kpi-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .kpi-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+  .kpi-value { font-size: 20px; font-weight: 700; color: #fff; }
+  .kpi-change { font-size: 11px; margin-top: 4px; }
+  .kpi-change.up { color: var(--green); }
+  .kpi-change.down { color: var(--red); }
+  
+  .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 24px; }
+  
+  .brand-section { margin-bottom: 32px; }
+  .brand-title { background: linear-gradient(90deg, #0f3460, #1a1a2e); padding: 10px 16px; border-radius: 6px 6px 0 0; border: 1px solid var(--border); font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: space-between; }
+  .brand-entity { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+  
+  .city-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  
+  select[multiple] { min-height: 120px; }
+  
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-left: 6px; }
+  .badge-entity { background: rgba(233,69,96,0.2); color: var(--highlight); }
+  
+  .scroll-container { max-height: 600px; overflow-y: auto; }
+  .scroll-container::-webkit-scrollbar { width: 6px; }
+  .scroll-container::-webkit-scrollbar-track { background: var(--secondary); }
+  .scroll-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  
+  .date-info { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; margin-bottom: 16px; color: var(--text-muted); font-size: 12px; }
+  .date-info span { color: #fff; font-weight: 600; }
+  
+  .chart-area { height: 200px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); margin-bottom: 20px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Restaurant Portfolio Dashboard</h1>
+    <div class="subtitle">Multi-brand performance analytics &bull; Data through Jun 30, 2026</div>
+  </div>
+  <div class="header-badge">Live Data</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')">Portfolio Overview</div>
+  <div class="tab" onclick="switchTab('brand')">Brand</div>
+  <div class="tab" onclick="switchTab('city')">City</div>
+  <div class="tab" onclick="switchTab('pid')">PID</div>
+  <div class="tab" onclick="switchTab('analytics')">Monthly Analytics</div>
+  <div class="tab" onclick="switchTab('sdlw')">Yesterday vs SDLW</div>
+</div>
+
+<div class="content">
+
+<!-- ========================= PORTFOLIO OVERVIEW TAB ========================= -->
+<div id="tab-overview" class="tab-content active">
+  <div class="section-title">Portfolio Overview</div>
+  
+  <div class="date-info">Latest data: <span>June 30, 2026</span> &bull; Period: <span>Jan – Jun 2026</span> &bull; Brands: <span>17</span> &bull; Cities: <span>10</span></div>
+  
+  <div class="kpi-grid" id="overview-kpis"></div>
+  
+  <div class="section-title">Monthly Performance Summary (Jan – Jun 2026)</div>
+  <div class="table-container">
+    <table id="overview-table"></table>
+  </div>
+</div>
+
+<!-- ========================= BRAND TAB ========================= -->
+<div id="tab-brand" class="tab-content">
+  <div class="section-title">Brand Performance</div>
+  
+  <div class="filter-bar">
+    <span class="filter-label">Entity Filter:</span>
+    <select class="filter-select" id="entity-filter" onchange="filterBrands()">
+      <option value="all">All Entities</option>
+      <option value="Azure_Hospitality_Pvt_Ltd">Azure Hospitality Pvt Ltd</option>
+      <option value="CREMTECH_TAILORED_FOODS_PRIVATE_LIMITED">CREMTECH Tailored Foods Pvt Ltd</option>
+      <option value="Gourmet_Investments_Pvt_Ltd">Gourmet Investments Pvt Ltd</option>
+      <option value="Salad_Days">Salad Days</option>
+      <option value="Dhaba_By_Claridges">Dhaba By Claridges</option>
+    </select>
+    <span class="filter-label">Metric:</span>
+    <select class="filter-select" id="brand-metric-filter" onchange="renderBrandTab()">
+      <option value="orders">Orders & OPD</option>
+      <option value="gmv">GMV</option>
+      <option value="sessions">Sessions (M2O%)</option>
+      <option value="users">Users (NU/RU)</option>
+      <option value="p_cohort">P-Cohort (P1/P2/P3)</option>
+      <option value="discounts">Discounts</option>
+      <option value="meal_time">Meal Time Split</option>
+    </select>
+  </div>
+  
+  <div id="brand-tab-content"></div>
+</div>
+
+<!-- ========================= CITY TAB ========================= -->
+<div id="tab-city" class="tab-content">
+  <div class="section-title">City Performance</div>
+  
+  <div class="filter-bar city-controls">
+    <span class="filter-label">Select Cities:</span>
+    <select class="filter-select" id="city-filter" multiple onchange="renderCityTab()" style="min-height:80px">
+    </select>
+    <div>
+      <button onclick="selectAllCities()" style="background:var(--accent);color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;margin-bottom:4px;display:block;width:100%;font-size:11px;">Select All</button>
+      <button onclick="clearCities()" style="background:var(--secondary);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:4px;cursor:pointer;display:block;width:100%;font-size:11px;">Clear</button>
+    </div>
+    <span class="filter-label">Metric:</span>
+    <select class="filter-select" id="city-metric-filter" onchange="renderCityTab()">
+      <option value="opd">OPD</option>
+      <option value="orders">Orders</option>
+      <option value="gmv">GMV</option>
+    </select>
+  </div>
+  
+  <div class="table-container">
+    <table id="city-table"></table>
+  </div>
+</div>
+
+<!-- ========================= PID TAB ========================= -->
+<div id="tab-pid" class="tab-content">
+  <div class="section-title">PID (Restaurant) Level Performance</div>
+  
+  <div class="filter-bar">
+    <span class="filter-label">Brand Filter:</span>
+    <select class="filter-select" id="pid-brand-filter" onchange="renderPidTab()">
+      <option value="all">All Brands</option>
+    </select>
+  </div>
+  
+  <div class="table-container">
+    <table id="pid-table"></table>
+  </div>
+</div>
+
+<!-- ========================= ANALYTICS TAB ========================= -->
+<div id="tab-analytics" class="tab-content">
+  <div class="section-title">Monthly Analytics – All Brands Combined</div>
+  
+  <div class="date-info">Showing Jan – Jun 2026 &bull; OPD = Total Orders / Days in Month</div>
+  
+  <div class="filter-bar">
+    <span class="filter-label">Entity:</span>
+    <select class="filter-select" id="analytics-entity-filter" onchange="renderAnalyticsTab()">
+      <option value="all">All Entities</option>
+      <option value="Azure_Hospitality_Pvt_Ltd">Azure Hospitality</option>
+      <option value="CREMTECH_TAILORED_FOODS_PRIVATE_LIMITED">CREMTECH</option>
+      <option value="Gourmet_Investments_Pvt_Ltd">Gourmet Investments</option>
+      <option value="Salad_Days">Salad Days</option>
+      <option value="Dhaba_By_Claridges">Dhaba By Claridges</option>
+    </select>
+  </div>
+  
+  <div class="table-container">
+    <table id="analytics-table"></table>
+  </div>
+</div>
+
+<!-- ========================= YESTERDAY VS SDLW TAB ========================= -->
+<div id="tab-sdlw" class="tab-content">
+  <div class="section-title">Yesterday vs Same Day Last Week (SDLW)</div>
+  
+  <div class="date-info">
+    Latest date auto-detected: <span>Jun 30, 2026 (Tuesday)</span> &bull;
+    SDLW-1: <span>Jun 23</span> &bull; SDLW-2: <span>Jun 16</span> &bull; SDLW-3: <span>Jun 9</span>
+  </div>
+  
+  <div class="filter-bar">
+    <span class="filter-label">Entity:</span>
+    <select class="filter-select" id="sdlw-entity-filter" onchange="renderSdlwTab()">
+      <option value="all">All Entities</option>
+      <option value="Azure_Hospitality_Pvt_Ltd">Azure Hospitality</option>
+      <option value="CREMTECH_TAILORED_FOODS_PRIVATE_LIMITED">CREMTECH</option>
+      <option value="Gourmet_Investments_Pvt_Ltd">Gourmet Investments</option>
+      <option value="Salad_Days">Salad Days</option>
+      <option value="Dhaba_By_Claridges">Dhaba By Claridges</option>
+    </select>
+    <span class="filter-label">Metric:</span>
+    <select class="filter-select" id="sdlw-metric-filter" onchange="renderSdlwTab()">
+      <option value="orders">Orders</option>
+      <option value="gmv">GMV</option>
+      <option value="sessions">Menu Sessions</option>
+      <option value="m2o">M2O%</option>
+    </select>
+  </div>
+  
+  <div class="table-container">
+    <table id="sdlw-table"></table>
+  </div>
+</div>
+
+</div><!-- end content -->
+
+<script>
+const RAW_DATA = {"brands": {"Dhaba Estd 1986 Delhi": {"entity": "Azure_Hospitality_Pvt_Ltd", "monthly": {"Jan": {"orders": 7865, "gmv": 3595882, "opd": 253.7, "days": 31, "menu_sessions": 35428, "cart_sessions": 14016, "payment_sessions": 10142, "order_sessions": 7865, "cpc_burn": 14386, "total_discount": 510125, "coupon_discount": 255609, "discounted_orders": 2794, "total_users": 7329, "p1_orders": 2023, "p2_orders": 943, "p3_orders": 1808, "breakfast_orders": 751, "lunch_orders": 2630, "snacks_orders": 750, "dinner_orders": 2915, "ln_orders": 819, "nu_ms": 14434, "ru_ms": 20994, "nu_orders": 3113, "ru_orders": 4752, "r_burn": 183736, "s_burn": 76204, "impression": 15178, "availability": 0.9105, "rdc_pct": 0.287, "m2o_pct": 22.2, "ru_order_pct": 60.42, "nu_order_pct": 39.58, "p1_pct": 25.72, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 42.84, "organic_orders": 4495, "organic_ms": 20250}, "Feb": {"orders": 7655, "gmv": 3615702, "opd": 273.4, "days": 28, "menu_sessions": 34315, "cart_sessions": 15338, "payment_sessions": 10485, "order_sessions": 7655, "cpc_burn": 20709, "total_discount": 697733, "coupon_discount": 353922, "discounted_orders": 4169, "total_users": 7216, "p1_orders": 2039, "p2_orders": 918, "p3_orders": 1760, "breakfast_orders": 678, "lunch_orders": 2778, "snacks_orders": 943, "dinner_orders": 3088, "ln_orders": 168, "nu_ms": 13789, "ru_ms": 20526, "nu_orders": 3137, "ru_orders": 4518, "r_burn": 217616, "s_burn": 189047, "impression": 9242, "availability": 0.9593, "rdc_pct": 0.1578, "m2o_pct": 22.31, "ru_order_pct": 59.02, "nu_order_pct": 40.98, "p1_pct": 26.64, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 26.93, "organic_orders": 5593, "organic_ms": 25073}, "Mar": {"orders": 7665, "gmv": 3601712, "opd": 247.3, "days": 31, "menu_sessions": 34255, "cart_sessions": 13575, "payment_sessions": 8960, "order_sessions": 7665, "cpc_burn": 18346, "total_discount": 528363, "coupon_discount": 310324, "discounted_orders": 3676, "total_users": 7331, "p1_orders": 2019, "p2_orders": 919, "p3_orders": 1762, "breakfast_orders": 475, "lunch_orders": 2705, "snacks_orders": 700, "dinner_orders": 2648, "ln_orders": 1137, "nu_ms": 14104, "ru_ms": 20151, "nu_orders": 3107, "ru_orders": 4558, "r_burn": 174716, "s_burn": 102218, "impression": 12918, "availability": 0.9548, "rdc_pct": 0.2447, "m2o_pct": 22.38, "ru_order_pct": 59.47, "nu_order_pct": 40.53, "p1_pct": 26.34, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 37.71, "organic_orders": 4774, "organic_ms": 21337}, "Apr": {"orders": 8273, "gmv": 4107188, "opd": 275.8, "days": 30, "menu_sessions": 38019, "cart_sessions": 15056, "payment_sessions": 9834, "order_sessions": 8273, "cpc_burn": 13371, "total_discount": 622107, "coupon_discount": 330393, "discounted_orders": 3550, "total_users": 8065, "p1_orders": 2174, "p2_orders": 992, "p3_orders": 1902, "breakfast_orders": 679, "lunch_orders": 2535, "snacks_orders": 804, "dinner_orders": 3039, "ln_orders": 1216, "nu_ms": 14991, "ru_ms": 23028, "nu_orders": 3346, "ru_orders": 4927, "r_burn": 316851, "s_burn": 226120, "impression": 11540, "availability": 0.9509, "rdc_pct": 0.3026, "m2o_pct": 21.76, "ru_order_pct": 59.56, "nu_order_pct": 40.44, "p1_pct": 26.28, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 30.35, "organic_orders": 5761, "organic_ms": 26479}, "May": {"orders": 8458, "gmv": 3945889, "opd": 272.8, "days": 31, "menu_sessions": 39210, "cart_sessions": 16298, "payment_sessions": 10741, "order_sessions": 8458, "cpc_burn": 19902, "total_discount": 498574, "coupon_discount": 237483, "discounted_orders": 4645, "total_users": 8049, "p1_orders": 2259, "p2_orders": 1014, "p3_orders": 1945, "breakfast_orders": 997, "lunch_orders": 3096, "snacks_orders": 683, "dinner_orders": 3268, "ln_orders": 414, "nu_ms": 15854, "ru_ms": 23356, "nu_orders": 3476, "ru_orders": 4982, "r_burn": 274650, "s_burn": 145550, "impression": 10662, "availability": 0.9476, "rdc_pct": 0.1954, "m2o_pct": 21.57, "ru_order_pct": 58.9, "nu_order_pct": 41.1, "p1_pct": 26.71, "p2_pct": 11.99, "p3_pct": 23.0, "cpc_ms_pct": 27.19, "organic_orders": 6158, "organic_ms": 28548}, "Jun": {"orders": 9096, "gmv": 4196481, "opd": 303.2, "days": 30, "menu_sessions": 41237, "cart_sessions": 16979, "payment_sessions": 12655, "order_sessions": 9096, "cpc_burn": 20606, "total_discount": 868889, "coupon_discount": 399419, "discounted_orders": 4345, "total_users": 8700, "p1_orders": 2312, "p2_orders": 1091, "p3_orders": 2092, "breakfast_orders": 552, "lunch_orders": 3240, "snacks_orders": 1071, "dinner_orders": 3578, "ln_orders": 655, "nu_ms": 16524, "ru_ms": 24713, "nu_orders": 3557, "ru_orders": 5539, "r_burn": 163380, "s_burn": 237123, "impression": 12481, "availability": 0.91, "rdc_pct": 0.2051, "m2o_pct": 22.06, "ru_order_pct": 60.89, "nu_order_pct": 39.11, "p1_pct": 25.42, "p2_pct": 11.99, "p3_pct": 23.0, "cpc_ms_pct": 30.27, "organic_orders": 6342, "organic_ms": 28756}}}, "Foxtrot": {"entity": "Azure_Hospitality_Pvt_Ltd", "monthly": {"Jan": {"orders": 2622, "gmv": 1148494, "opd": 84.6, "days": 31, "menu_sessions": 13308, "cart_sessions": 5831, "payment_sessions": 3969, "order_sessions": 2622, "cpc_burn": 13647, "total_discount": 145768, "coupon_discount": 80482, "discounted_orders": 1319, "total_users": 2432, "p1_orders": 783, "p2_orders": 314, "p3_orders": 603, "breakfast_orders": 218, "lunch_orders": 878, "snacks_orders": 258, "dinner_orders": 1061, "ln_orders": 207, "nu_ms": 5960, "ru_ms": 7348, "nu_orders": 1206, "ru_orders": 1416, "r_burn": 39373, "s_burn": 45296, "impression": 5663, "availability": 0.9248, "rdc_pct": 0.2417, "m2o_pct": 19.7, "ru_order_pct": 54.0, "nu_order_pct": 46.0, "p1_pct": 29.86, "p2_pct": 11.98, "p3_pct": 23.0, "cpc_ms_pct": 42.55, "organic_orders": 1506, "organic_ms": 7645}, "Feb": {"orders": 2655, "gmv": 1081775, "opd": 94.8, "days": 28, "menu_sessions": 13175, "cart_sessions": 5924, "payment_sessions": 4235, "order_sessions": 2655, "cpc_burn": 4684, "total_discount": 193455, "coupon_discount": 86285, "discounted_orders": 1046, "total_users": 2453, "p1_orders": 779, "p2_orders": 318, "p3_orders": 610, "breakfast_orders": 250, "lunch_orders": 804, "snacks_orders": 380, "dinner_orders": 1070, "ln_orders": 151, "nu_ms": 5776, "ru_ms": 7399, "nu_orders": 1199, "ru_orders": 1456, "r_burn": 44607, "s_burn": 36265, "impression": 4657, "availability": 0.9267, "rdc_pct": 0.2637, "m2o_pct": 20.15, "ru_order_pct": 54.84, "nu_order_pct": 45.16, "p1_pct": 29.34, "p2_pct": 11.98, "p3_pct": 22.98, "cpc_ms_pct": 35.35, "organic_orders": 1716, "organic_ms": 8518}, "Mar": {"orders": 2651, "gmv": 1072481, "opd": 85.5, "days": 31, "menu_sessions": 13485, "cart_sessions": 5663, "payment_sessions": 3948, "order_sessions": 2651, "cpc_burn": 6235, "total_discount": 174126, "coupon_discount": 85914, "discounted_orders": 1314, "total_users": 2546, "p1_orders": 765, "p2_orders": 318, "p3_orders": 609, "breakfast_orders": 315, "lunch_orders": 768, "snacks_orders": 286, "dinner_orders": 903, "ln_orders": 379, "nu_ms": 6199, "ru_ms": 7286, "nu_orders": 1177, "ru_orders": 1474, "r_burn": 37372, "s_burn": 39941, "impression": 5549, "availability": 0.9274, "rdc_pct": 0.1823, "m2o_pct": 19.66, "ru_order_pct": 55.6, "nu_order_pct": 44.4, "p1_pct": 28.86, "p2_pct": 12.0, "p3_pct": 22.97, "cpc_ms_pct": 41.15, "organic_orders": 1560, "organic_ms": 7936}, "Apr": {"orders": 2823, "gmv": 1176398, "opd": 94.1, "days": 30, "menu_sessions": 13989, "cart_sessions": 5560, "payment_sessions": 4127, "order_sessions": 2823, "cpc_burn": 10252, "total_discount": 239518, "coupon_discount": 142226, "discounted_orders": 1511, "total_users": 2740, "p1_orders": 828, "p2_orders": 338, "p3_orders": 649, "breakfast_orders": 174, "lunch_orders": 927, "snacks_orders": 268, "dinner_orders": 982, "ln_orders": 472, "nu_ms": 6128, "ru_ms": 7861, "nu_orders": 1274, "ru_orders": 1549, "r_burn": 38268, "s_burn": 70550, "impression": 5907, "availability": 0.9365, "rdc_pct": 0.3175, "m2o_pct": 20.18, "ru_order_pct": 54.87, "nu_order_pct": 45.13, "p1_pct": 29.33, "p2_pct": 11.97, "p3_pct": 22.99, "cpc_ms_pct": 42.23, "organic_orders": 1630, "organic_ms": 8082}, "May": {"orders": 2904, "gmv": 1254328, "opd": 93.7, "days": 31, "menu_sessions": 14493, "cart_sessions": 5936, "payment_sessions": 4426, "order_sessions": 2904, "cpc_burn": 10579, "total_discount": 272027, "coupon_discount": 140321, "discounted_orders": 1331, "total_users": 2802, "p1_orders": 829, "p2_orders": 348, "p3_orders": 667, "breakfast_orders": 156, "lunch_orders": 982, "snacks_orders": 334, "dinner_orders": 1168, "ln_orders": 264, "nu_ms": 6387, "ru_ms": 8106, "nu_orders": 1276, "ru_orders": 1628, "r_burn": 47338, "s_burn": 39973, "impression": 5234, "availability": 0.9773, "rdc_pct": 0.1636, "m2o_pct": 20.04, "ru_order_pct": 56.06, "nu_order_pct": 43.94, "p1_pct": 28.55, "p2_pct": 11.98, "p3_pct": 22.97, "cpc_ms_pct": 36.11, "organic_orders": 1855, "organic_ms": 9259}, "Jun": {"orders": 3063, "gmv": 1298686, "opd": 102.1, "days": 30, "menu_sessions": 15422, "cart_sessions": 6114, "payment_sessions": 4047, "order_sessions": 3063, "cpc_burn": 8354, "total_discount": 231643, "coupon_discount": 116877, "discounted_orders": 1644, "total_users": 2855, "p1_orders": 879, "p2_orders": 367, "p3_orders": 704, "breakfast_orders": 306, "lunch_orders": 930, "snacks_orders": 329, "dinner_orders": 1165, "ln_orders": 333, "nu_ms": 6856, "ru_ms": 8566, "nu_orders": 1353, "ru_orders": 1710, "r_burn": 79180, "s_burn": 47751, "impression": 4614, "availability": 0.9321, "rdc_pct": 0.2778, "m2o_pct": 19.86, "ru_order_pct": 55.83, "nu_order_pct": 44.17, "p1_pct": 28.7, "p2_pct": 11.98, "p3_pct": 22.98, "cpc_ms_pct": 29.92, "organic_orders": 2146, "organic_ms": 10808}}}, "Kenny's": {"entity": "Azure_Hospitality_Pvt_Ltd", "monthly": {"Jan": {"orders": 2143, "gmv": 832284, "opd": 69.1, "days": 31, "menu_sessions": 11503, "cart_sessions": 5173, "payment_sessions": 3400, "order_sessions": 2143, "cpc_burn": 8317, "total_discount": 130629, "coupon_discount": 56373, "discounted_orders": 1107, "total_users": 2062, "p1_orders": 594, "p2_orders": 257, "p3_orders": 492, "breakfast_orders": 198, "lunch_orders": 811, "snacks_orders": 269, "dinner_orders": 644, "ln_orders": 221, "nu_ms": 4923, "ru_ms": 6580, "nu_orders": 915, "ru_orders": 1228, "r_burn": 61625, "s_burn": 45918, "impression": 3485, "availability": 0.931, "rdc_pct": 0.2628, "m2o_pct": 18.63, "ru_order_pct": 57.3, "nu_order_pct": 42.7, "p1_pct": 27.72, "p2_pct": 11.99, "p3_pct": 22.96, "cpc_ms_pct": 30.3, "organic_orders": 1493, "organic_ms": 8018}, "Feb": {"orders": 2190, "gmv": 822865, "opd": 78.2, "days": 28, "menu_sessions": 11349, "cart_sessions": 4397, "payment_sessions": 3101, "order_sessions": 2190, "cpc_burn": 8504, "total_discount": 120466, "coupon_discount": 59957, "discounted_orders": 1163, "total_users": 2125, "p1_orders": 605, "p2_orders": 262, "p3_orders": 503, "breakfast_orders": 123, "lunch_orders": 705, "snacks_orders": 217, "dinner_orders": 657, "ln_orders": 488, "nu_ms": 4844, "ru_ms": 6505, "nu_orders": 932, "ru_orders": 1258, "r_burn": 33063, "s_burn": 37333, "impression": 4210, "availability": 0.9546, "rdc_pct": 0.1945, "m2o_pct": 19.3, "ru_order_pct": 57.44, "nu_order_pct": 42.56, "p1_pct": 27.63, "p2_pct": 11.96, "p3_pct": 22.97, "cpc_ms_pct": 37.1, "organic_orders": 1377, "organic_ms": 7139}, "Mar": {"orders": 2229, "gmv": 873803, "opd": 71.9, "days": 31, "menu_sessions": 11697, "cart_sessions": 4452, "payment_sessions": 2927, "order_sessions": 2229, "cpc_burn": 8703, "total_discount": 117797, "coupon_discount": 50121, "discounted_orders": 917, "total_users": 2170, "p1_orders": 596, "p2_orders": 267, "p3_orders": 512, "breakfast_orders": 235, "lunch_orders": 815, "snacks_orders": 318, "dinner_orders": 724, "ln_orders": 137, "nu_ms": 4838, "ru_ms": 6859, "nu_orders": 917, "ru_orders": 1312, "r_burn": 62678, "s_burn": 37836, "impression": 5038, "availability": 0.9172, "rdc_pct": 0.2826, "m2o_pct": 19.06, "ru_order_pct": 58.86, "nu_order_pct": 41.14, "p1_pct": 26.74, "p2_pct": 11.98, "p3_pct": 22.97, "cpc_ms_pct": 43.07, "organic_orders": 1268, "organic_ms": 6659}, "Apr": {"orders": 2361, "gmv": 912169, "opd": 78.7, "days": 30, "menu_sessions": 12486, "cart_sessions": 4879, "payment_sessions": 3625, "order_sessions": 2361, "cpc_burn": 12109, "total_discount": 176647, "coupon_discount": 82395, "discounted_orders": 1265, "total_users": 2285, "p1_orders": 631, "p2_orders": 283, "p3_orders": 543, "breakfast_orders": 260, "lunch_orders": 852, "snacks_orders": 232, "dinner_orders": 931, "ln_orders": 86, "nu_ms": 5120, "ru_ms": 7366, "nu_orders": 972, "ru_orders": 1389, "r_burn": 67565, "s_burn": 19148, "impression": 5559, "availability": 0.9711, "rdc_pct": 0.296, "m2o_pct": 18.91, "ru_order_pct": 58.83, "nu_order_pct": 41.17, "p1_pct": 26.73, "p2_pct": 11.99, "p3_pct": 23.0, "cpc_ms_pct": 44.52, "organic_orders": 1309, "organic_ms": 6927}, "May": {"orders": 2360, "gmv": 949539, "opd": 76.1, "days": 31, "menu_sessions": 12401, "cart_sessions": 4977, "payment_sessions": 3630, "order_sessions": 2360, "cpc_burn": 3563, "total_discount": 205754, "coupon_discount": 93788, "discounted_orders": 1128, "total_users": 2227, "p1_orders": 654, "p2_orders": 283, "p3_orders": 542, "breakfast_orders": 280, "lunch_orders": 787, "snacks_orders": 343, "dinner_orders": 740, "ln_orders": 210, "nu_ms": 5355, "ru_ms": 7046, "nu_orders": 1007, "ru_orders": 1353, "r_burn": 44071, "s_burn": 51820, "impression": 3158, "availability": 0.9225, "rdc_pct": 0.3136, "m2o_pct": 19.03, "ru_order_pct": 57.33, "nu_order_pct": 42.67, "p1_pct": 27.71, "p2_pct": 11.99, "p3_pct": 22.97, "cpc_ms_pct": 25.47, "organic_orders": 1759, "organic_ms": 9243}, "Jun": {"orders": 2508, "gmv": 939817, "opd": 83.6, "days": 30, "menu_sessions": 13165, "cart_sessions": 5674, "payment_sessions": 3866, "order_sessions": 2508, "cpc_burn": 6746, "total_discount": 179391, "coupon_discount": 71817, "discounted_orders": 1342, "total_users": 2388, "p1_orders": 681, "p2_orders": 300, "p3_orders": 576, "breakfast_orders": 251, "lunch_orders": 888, "snacks_orders": 318, "dinner_orders": 862, "ln_orders": 189, "nu_ms": 5386, "ru_ms": 7779, "nu_orders": 1048, "ru_orders": 1460, "r_burn": 55289, "s_burn": 28372, "impression": 4637, "availability": 0.9565, "rdc_pct": 0.2061, "m2o_pct": 19.05, "ru_order_pct": 58.21, "nu_order_pct": 41.79, "p1_pct": 27.15, "p2_pct": 11.96, "p3_pct": 22.97, "cpc_ms_pct": 35.22, "organic_orders": 1624, "organic_ms": 8528}}}, "Maalgaadi by Dhaba Estd 1986": {"entity": "Azure_Hospitality_Pvt_Ltd", "monthly": {"Jan": {"orders": 1384, "gmv": 501258, "opd": 44.6, "days": 31, "menu_sessions": 7756, "cart_sessions": 3110, "payment_sessions": 2117, "order_sessions": 1384, "cpc_burn": 3339, "total_discount": 107287, "coupon_discount": 57449, "discounted_orders": 734, "total_users": 1324, "p1_orders": 433, "p2_orders": 166, "p3_orders": 318, "breakfast_orders": 98, "lunch_orders": 463, "snacks_orders": 110, "dinner_orders": 462, "ln_orders": 251, "nu_ms": 3707, "ru_ms": 4049, "nu_orders": 667, "ru_orders": 717, "r_burn": 18228, "s_burn": 18455, "impression": 2563, "availability": 0.9506, "rdc_pct": 0.2613, "m2o_pct": 17.84, "ru_order_pct": 51.81, "nu_order_pct": 48.19, "p1_pct": 31.29, "p2_pct": 11.99, "p3_pct": 22.98, "cpc_ms_pct": 33.05, "organic_orders": 926, "organic_ms": 5193}, "Feb": {"orders": 1355, "gmv": 471507, "opd": 48.4, "days": 28, "menu_sessions": 7441, "cart_sessions": 3074, "payment_sessions": 2275, "order_sessions": 1355, "cpc_burn": 1994, "total_discount": 72385, "coupon_discount": 40802, "discounted_orders": 677, "total_users": 1301, "p1_orders": 417, "p2_orders": 162, "p3_orders": 311, "breakfast_orders": 89, "lunch_orders": 406, "snacks_orders": 110, "dinner_orders": 446, "ln_orders": 304, "nu_ms": 3566, "ru_ms": 3875, "nu_orders": 643, "ru_orders": 712, "r_burn": 26297, "s_burn": 21368, "impression": 2112, "availability": 0.9695, "rdc_pct": 0.1624, "m2o_pct": 18.21, "ru_order_pct": 52.55, "nu_order_pct": 47.45, "p1_pct": 30.77, "p2_pct": 11.96, "p3_pct": 22.95, "cpc_ms_pct": 28.38, "organic_orders": 970, "organic_ms": 5329}, "Mar": {"orders": 1391, "gmv": 493168, "opd": 44.9, "days": 31, "menu_sessions": 7633, "cart_sessions": 3272, "payment_sessions": 2288, "order_sessions": 1391, "cpc_burn": 2355, "total_discount": 64437, "coupon_discount": 31254, "discounted_orders": 535, "total_users": 1359, "p1_orders": 439, "p2_orders": 166, "p3_orders": 319, "breakfast_orders": 119, "lunch_orders": 396, "snacks_orders": 135, "dinner_orders": 558, "ln_orders": 183, "nu_ms": 3654, "ru_ms": 3979, "nu_orders": 676, "ru_orders": 715, "r_burn": 33313, "s_burn": 25054, "impression": 2909, "availability": 0.9661, "rdc_pct": 0.2635, "m2o_pct": 18.22, "ru_order_pct": 51.4, "nu_order_pct": 48.6, "p1_pct": 31.56, "p2_pct": 11.93, "p3_pct": 22.93, "cpc_ms_pct": 38.11, "organic_orders": 860, "organic_ms": 4724}, "Apr": {"orders": 1511, "gmv": 533898, "opd": 50.4, "days": 30, "menu_sessions": 8545, "cart_sessions": 3780, "payment_sessions": 2688, "order_sessions": 1511, "cpc_burn": 6631, "total_discount": 103771, "coupon_discount": 51360, "discounted_orders": 607, "total_users": 1412, "p1_orders": 467, "p2_orders": 181, "p3_orders": 347, "breakfast_orders": 142, "lunch_orders": 538, "snacks_orders": 176, "dinner_orders": 566, "ln_orders": 89, "nu_ms": 4046, "ru_ms": 4499, "nu_orders": 719, "ru_orders": 792, "r_burn": 30642, "s_burn": 29839, "impression": 2998, "availability": 0.9154, "rdc_pct": 0.1986, "m2o_pct": 17.68, "ru_order_pct": 52.42, "nu_order_pct": 47.58, "p1_pct": 30.91, "p2_pct": 11.98, "p3_pct": 22.96, "cpc_ms_pct": 35.08, "organic_orders": 980, "organic_ms": 5547}, "May": {"orders": 1506, "gmv": 517597, "opd": 48.6, "days": 31, "menu_sessions": 8380, "cart_sessions": 3265, "payment_sessions": 2197, "order_sessions": 1506, "cpc_burn": 2980, "total_discount": 83632, "coupon_discount": 36912, "discounted_orders": 653, "total_users": 1467, "p1_orders": 466, "p2_orders": 180, "p3_orders": 346, "breakfast_orders": 136, "lunch_orders": 526, "snacks_orders": 210, "dinner_orders": 590, "ln_orders": 44, "nu_ms": 3993, "ru_ms": 4387, "nu_orders": 717, "ru_orders": 789, "r_burn": 26077, "s_burn": 21586, "impression": 3278, "availability": 0.9104, "rdc_pct": 0.2098, "m2o_pct": 17.97, "ru_order_pct": 52.39, "nu_order_pct": 47.61, "p1_pct": 30.94, "p2_pct": 11.95, "p3_pct": 22.97, "cpc_ms_pct": 39.12, "organic_orders": 916, "organic_ms": 5102}, "Jun": {"orders": 1643, "gmv": 595375, "opd": 54.8, "days": 30, "menu_sessions": 9293, "cart_sessions": 3803, "payment_sessions": 2756, "order_sessions": 1643, "cpc_burn": 4046, "total_discount": 73173, "coupon_discount": 34188, "discounted_orders": 798, "total_users": 1551, "p1_orders": 512, "p2_orders": 197, "p3_orders": 377, "breakfast_orders": 101, "lunch_orders": 536, "snacks_orders": 146, "dinner_orders": 615, "ln_orders": 245, "nu_ms": 4334, "ru_ms": 4959, "nu_orders": 788, "ru_orders": 855, "r_burn": 24393, "s_burn": 22287, "impression": 3444, "availability": 0.9376, "rdc_pct": 0.2459, "m2o_pct": 17.68, "ru_order_pct": 52.04, "nu_order_pct": 47.96, "p1_pct": 31.16, "p2_pct": 11.99, "p3_pct": 22.95, "cpc_ms_pct": 37.06, "organic_orders": 1034, "organic_ms": 5849}}}, "Mamagoto": {"entity": "Azure_Hospitality_Pvt_Ltd", "monthly": {"Jan": {"orders": 5246, "gmv": 2660443, "opd": 169.2, "days": 31, "menu_sessions": 22476, "cart_sessions": 9267, "payment_sessions": 6070, "order_sessions": 5246, "cpc_burn": 8907, "total_discount": 519321, "coupon_discount": 294136, "discounted_orders": 2100, "total_users": 4852, "p1_orders": 1306, "p2_orders": 629, "p3_orders": 1206, "breakfast_orders": 269, "lunch_orders": 1751, "snacks_orders": 786, "dinner_orders": 1794, "ln_orders": 646, "nu_ms": 8617, "ru_ms": 13859, "nu_orders": 2010, "ru_orders": 3236, "r_burn": 181074, "s_burn": 93555, "impression": 6570, "availability": 0.9647, "rdc_pct": 0.2608, "m2o_pct": 23.34, "ru_order_pct": 61.69, "nu_order_pct": 38.31, "p1_pct": 24.9, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 29.23, "organic_orders": 3712, "organic_ms": 15906}, "Feb": {"orders": 5317, "gmv": 2778029, "opd": 189.9, "days": 28, "menu_sessions": 22839, "cart_sessions": 8711, "payment_sessions": 5794, "order_sessions": 5317, "cpc_burn": 15419, "total_discount": 546410, "coupon_discount": 236900, "discounted_orders": 2506, "total_users": 5130, "p1_orders": 1345, "p2_orders": 638, "p3_orders": 1222, "breakfast_orders": 308, "lunch_orders": 1924, "snacks_orders": 784, "dinner_orders": 1664, "ln_orders": 637, "nu_ms": 8431, "ru_ms": 14408, "nu_orders": 2070, "ru_orders": 3247, "r_burn": 113616, "s_burn": 133286, "impression": 8767, "availability": 0.9318, "rdc_pct": 0.2651, "m2o_pct": 23.28, "ru_order_pct": 61.07, "nu_order_pct": 38.93, "p1_pct": 25.3, "p2_pct": 12.0, "p3_pct": 22.98, "cpc_ms_pct": 38.39, "organic_orders": 3276, "organic_ms": 14072}, "Mar": {"orders": 5543, "gmv": 2742858, "opd": 178.8, "days": 31, "menu_sessions": 24307, "cart_sessions": 9365, "payment_sessions": 6734, "order_sessions": 5543, "cpc_burn": 13888, "total_discount": 362347, "coupon_discount": 216237, "discounted_orders": 2807, "total_users": 5215, "p1_orders": 1357, "p2_orders": 665, "p3_orders": 1274, "breakfast_orders": 443, "lunch_orders": 1757, "snacks_orders": 639, "dinner_orders": 1889, "ln_orders": 815, "nu_ms": 9430, "ru_ms": 14877, "nu_orders": 2089, "ru_orders": 3454, "r_burn": 198897, "s_burn": 120731, "impression": 6572, "availability": 0.9676, "rdc_pct": 0.1679, "m2o_pct": 22.8, "ru_order_pct": 62.31, "nu_order_pct": 37.69, "p1_pct": 24.48, "p2_pct": 12.0, "p3_pct": 22.98, "cpc_ms_pct": 27.04, "organic_orders": 4044, "organic_ms": 17735}, "Apr": {"orders": 5821, "gmv": 2949962, "opd": 194.0, "days": 30, "menu_sessions": 25641, "cart_sessions": 11013, "payment_sessions": 7638, "order_sessions": 5821, "cpc_burn": 14305, "total_discount": 496625, "coupon_discount": 241914, "discounted_orders": 2888, "total_users": 5449, "p1_orders": 1416, "p2_orders": 698, "p3_orders": 1338, "breakfast_orders": 638, "lunch_orders": 2113, "snacks_orders": 500, "dinner_orders": 2362, "ln_orders": 208, "nu_ms": 9593, "ru_ms": 16048, "nu_orders": 2179, "ru_orders": 3642, "r_burn": 207707, "s_burn": 122503, "impression": 11361, "availability": 0.9425, "rdc_pct": 0.2538, "m2o_pct": 22.7, "ru_order_pct": 62.57, "nu_order_pct": 37.43, "p1_pct": 24.33, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 44.31, "organic_orders": 3241, "organic_ms": 14280}, "May": {"orders": 5848, "gmv": 2786192, "opd": 188.6, "days": 31, "menu_sessions": 25783, "cart_sessions": 10125, "payment_sessions": 6796, "order_sessions": 5848, "cpc_burn": 18832, "total_discount": 337171, "coupon_discount": 198800, "discounted_orders": 2146, "total_users": 5632, "p1_orders": 1417, "p2_orders": 701, "p3_orders": 1345, "breakfast_orders": 492, "lunch_orders": 2080, "snacks_orders": 750, "dinner_orders": 2207, "ln_orders": 319, "nu_ms": 9792, "ru_ms": 15991, "nu_orders": 2180, "ru_orders": 3668, "r_burn": 181267, "s_burn": 86513, "impression": 8200, "availability": 0.9655, "rdc_pct": 0.1658, "m2o_pct": 22.68, "ru_order_pct": 62.72, "nu_order_pct": 37.28, "p1_pct": 24.23, "p2_pct": 11.99, "p3_pct": 23.0, "cpc_ms_pct": 31.8, "organic_orders": 3988, "organic_ms": 17583}, "Jun": {"orders": 6140, "gmv": 3128879, "opd": 204.7, "days": 30, "menu_sessions": 26488, "cart_sessions": 11143, "payment_sessions": 7770, "order_sessions": 6140, "cpc_burn": 18356, "total_discount": 460232, "coupon_discount": 207234, "discounted_orders": 2297, "total_users": 5719, "p1_orders": 1513, "p2_orders": 736, "p3_orders": 1412, "breakfast_orders": 358, "lunch_orders": 2048, "snacks_orders": 818, "dinner_orders": 1978, "ln_orders": 938, "nu_ms": 9894, "ru_ms": 16594, "nu_orders": 2329, "ru_orders": 3811, "r_burn": 145617, "s_burn": 150543, "impression": 8876, "availability": 0.9439, "rdc_pct": 0.2732, "m2o_pct": 23.18, "ru_order_pct": 62.07, "nu_order_pct": 37.93, "p1_pct": 24.64, "p2_pct": 11.99, "p3_pct": 23.0, "cpc_ms_pct": 33.51, "organic_orders": 4082, "organic_ms": 17612}}}, "Oki Poki by Mamagoto": {"entity": "Azure_Hospitality_Pvt_Ltd", "monthly": {"Jan": {"orders": 1851, "gmv": 705113, "opd": 59.7, "days": 31, "menu_sessions": 9174, "cart_sessions": 3550, "payment_sessions": 2376, "order_sessions": 1851, "cpc_burn": 2161, "total_discount": 153312, "coupon_discount": 78292, "discounted_orders": 906, "total_users": 1716, "p1_orders": 549, "p2_orders": 222, "p3_orders": 425, "breakfast_orders": 205, "lunch_orders": 609, "snacks_orders": 261, "dinner_orders": 682, "ln_orders": 94, "nu_ms": 4120, "ru_ms": 5054, "nu_orders": 845, "ru_orders": 1006, "r_burn": 39985, "s_burn": 21839, "impression": 2622, "availability": 0.9408, "rdc_pct": 0.1813, "m2o_pct": 20.18, "ru_order_pct": 54.35, "nu_order_pct": 45.65, "p1_pct": 29.66, "p2_pct": 11.99, "p3_pct": 22.96, "cpc_ms_pct": 28.58, "organic_orders": 1321, "organic_ms": 6552}, "Feb": {"orders": 1699, "gmv": 674096, "opd": 60.7, "days": 28, "menu_sessions": 8487, "cart_sessions": 3713, "payment_sessions": 2562, "order_sessions": 1699, "cpc_burn": 2843, "total_discount": 101373, "coupon_discount": 60700, "discounted_orders": 634, "total_users": 1641, "p1_orders": 507, "p2_orders": 203, "p3_orders": 390, "breakfast_orders": 157, "lunch_orders": 610, "snacks_orders": 162, "dinner_orders": 616, "ln_orders": 154, "nu_ms": 3807, "ru_ms": 4680, "nu_orders": 781, "ru_orders": 918, "r_burn": 25252, "s_burn": 28658, "impression": 3190, "availability": 0.941, "rdc_pct": 0.2962, "m2o_pct": 20.02, "ru_order_pct": 54.03, "nu_order_pct": 45.97, "p1_pct": 29.84, "p2_pct": 11.95, "p3_pct": 22.95, "cpc_ms_pct": 37.59, "organic_orders": 1060, "organic_ms": 5297}, "Mar": {"orders": 1851, "gmv": 689691, "opd": 59.7, "days": 31, "menu_sessions": 9299, "cart_sessions": 3930, "payment_sessions": 2845, "order_sessions": 1851, "cpc_burn": 3141, "total_discount": 94751, "coupon_discount": 39323, "discounted_orders": 648, "total_users": 1752, "p1_orders": 529, "p2_orders": 222, "p3_orders": 425, "breakfast_orders": 169, "lunch_orders": 572, "snacks_orders": 178, "dinner_orders": 712, "ln_orders": 220, "nu_ms": 4235, "ru_ms": 5064, "nu_orders": 815, "ru_orders": 1036, "r_burn": 43465, "s_burn": 18127, "impression": 2711, "availability": 0.9418, "rdc_pct": 0.2669, "m2o_pct": 19.91, "ru_order_pct": 55.97, "nu_order_pct": 44.03, "p1_pct": 28.58, "p2_pct": 11.99, "p3_pct": 22.96, "cpc_ms_pct": 29.15, "organic_orders": 1311, "organic_ms": 6588}, "Apr": {"orders": 1936, "gmv": 756855, "opd": 64.5, "days": 30, "menu_sessions": 9728, "cart_sessions": 4146, "payment_sessions": 3081, "order_sessions": 1936, "cpc_burn": 6636, "total_discount": 96227, "coupon_discount": 41684, "discounted_orders": 796, "total_users": 1868, "p1_orders": 568, "p2_orders": 232, "p3_orders": 445, "breakfast_orders": 173, "lunch_orders": 597, "snacks_orders": 171, "dinner_orders": 740, "ln_orders": 255, "nu_ms": 4430, "ru_ms": 5298, "nu_orders": 875, "ru_orders": 1061, "r_burn": 57082, "s_burn": 40163, "impression": 3491, "availability": 0.976, "rdc_pct": 0.2351, "m2o_pct": 19.9, "ru_order_pct": 54.8, "nu_order_pct": 45.2, "p1_pct": 29.34, "p2_pct": 11.98, "p3_pct": 22.99, "cpc_ms_pct": 35.89, "organic_orders": 1241, "organic_ms": 6237}, "May": {"orders": 1963, "gmv": 714643, "opd": 63.3, "days": 31, "menu_sessions": 9634, "cart_sessions": 3952, "payment_sessions": 2696, "order_sessions": 1963, "cpc_burn": 6293, "total_discount": 153705, "coupon_discount": 92210, "discounted_orders": 950, "total_users": 1837, "p1_orders": 581, "p2_orders": 235, "p3_orders": 451, "breakfast_orders": 103, "lunch_orders": 698, "snacks_orders": 221, "dinner_orders": 742, "ln_orders": 199, "nu_ms": 4443, "ru_ms": 5191, "nu_orders": 895, "ru_orders": 1068, "r_burn": 51310, "s_burn": 30735, "impression": 2584, "availability": 0.9227, "rdc_pct": 0.2495, "m2o_pct": 20.38, "ru_order_pct": 54.41, "nu_order_pct": 45.59, "p1_pct": 29.6, "p2_pct": 11.97, "p3_pct": 22.98, "cpc_ms_pct": 26.82, "organic_orders": 1436, "organic_ms": 7050}, "Jun": {"orders": 2098, "gmv": 796580, "opd": 69.9, "days": 30, "menu_sessions": 10318, "cart_sessions": 4172, "payment_sessions": 2850, "order_sessions": 2098, "cpc_burn": 5918, "total_discount": 170882, "coupon_discount": 96158, "discounted_orders": 965, "total_users": 1987, "p1_orders": 609, "p2_orders": 251, "p3_orders": 482, "breakfast_orders": 151, "lunch_orders": 655, "snacks_orders": 310, "dinner_orders": 731, "ln_orders": 251, "nu_ms": 4647, "ru_ms": 5671, "nu_orders": 937, "ru_orders": 1161, "r_burn": 51526, "s_burn": 25115, "impression": 4349, "availability": 0.9792, "rdc_pct": 0.2618, "m2o_pct": 20.33, "ru_order_pct": 55.34, "nu_order_pct": 44.66, "p1_pct": 29.03, "p2_pct": 11.96, "p3_pct": 22.97, "cpc_ms_pct": 42.15, "organic_orders": 1213, "organic_ms": 5969}}}, "Rollmaal": {"entity": "Azure_Hospitality_Pvt_Ltd", "monthly": {"Jan": {"orders": 902, "gmv": 286136, "opd": 29.1, "days": 31, "menu_sessions": 5239, "cart_sessions": 2123, "payment_sessions": 1540, "order_sessions": 902, "cpc_burn": 2414, "total_discount": 46872, "coupon_discount": 25295, "discounted_orders": 337, "total_users": 882, "p1_orders": 291, "p2_orders": 108, "p3_orders": 207, "breakfast_orders": 83, "lunch_orders": 274, "snacks_orders": 82, "dinner_orders": 330, "ln_orders": 133, "nu_ms": 2627, "ru_ms": 2612, "nu_orders": 449, "ru_orders": 453, "r_burn": 16442, "s_burn": 16340, "impression": 2106, "availability": 0.9165, "rdc_pct": 0.3187, "m2o_pct": 17.22, "ru_order_pct": 50.22, "nu_order_pct": 49.78, "p1_pct": 32.26, "p2_pct": 11.97, "p3_pct": 22.95, "cpc_ms_pct": 40.2, "organic_orders": 539, "organic_ms": 3133}, "Feb": {"orders": 894, "gmv": 284977, "opd": 31.9, "days": 28, "menu_sessions": 5178, "cart_sessions": 2269, "payment_sessions": 1587, "order_sessions": 894, "cpc_burn": 2303, "total_discount": 41143, "coupon_discount": 20993, "discounted_orders": 381, "total_users": 871, "p1_orders": 288, "p2_orders": 107, "p3_orders": 205, "breakfast_orders": 76, "lunch_orders": 328, "snacks_orders": 125, "dinner_orders": 297, "ln_orders": 68, "nu_ms": 2634, "ru_ms": 2544, "nu_orders": 444, "ru_orders": 450, "r_burn": 20443, "s_burn": 16873, "impression": 1821, "availability": 0.939, "rdc_pct": 0.3088, "m2o_pct": 17.27, "ru_order_pct": 50.34, "nu_order_pct": 49.66, "p1_pct": 32.21, "p2_pct": 11.97, "p3_pct": 22.93, "cpc_ms_pct": 35.17, "organic_orders": 579, "organic_ms": 3357}, "Mar": {"orders": 899, "gmv": 296902, "opd": 29.0, "days": 31, "menu_sessions": 5242, "cart_sessions": 2101, "payment_sessions": 1488, "order_sessions": 899, "cpc_burn": 1919, "total_discount": 52015, "coupon_discount": 26459, "discounted_orders": 396, "total_users": 844, "p1_orders": 286, "p2_orders": 107, "p3_orders": 206, "breakfast_orders": 56, "lunch_orders": 314, "snacks_orders": 107, "dinner_orders": 294, "ln_orders": 128, "nu_ms": 2664, "ru_ms": 2578, "nu_orders": 441, "ru_orders": 458, "r_burn": 16902, "s_burn": 10037, "impression": 1823, "availability": 0.9131, "rdc_pct": 0.2766, "m2o_pct": 17.15, "ru_order_pct": 50.95, "nu_order_pct": 49.05, "p1_pct": 31.81, "p2_pct": 11.9, "p3_pct": 22.91, "cpc_ms_pct": 34.78, "organic_orders": 586, "organic_ms": 3419}, "Apr": {"orders": 955, "gmv": 315117, "opd": 31.8, "days": 30, "menu_sessions": 5592, "cart_sessions": 2384, "payment_sessions": 1745, "order_sessions": 955, "cpc_burn": 1684, "total_discount": 65220, "coupon_discount": 37491, "discounted_orders": 418, "total_users": 908, "p1_orders": 304, "p2_orders": 114, "p3_orders": 219, "breakfast_orders": 78, "lunch_orders": 336, "snacks_orders": 103, "dinner_orders": 361, "ln_orders": 77, "nu_ms": 2738, "ru_ms": 2854, "nu_orders": 469, "ru_orders": 486, "r_burn": 17368, "s_burn": 13741, "impression": 1951, "availability": 0.9429, "rdc_pct": 0.3148, "m2o_pct": 17.08, "ru_order_pct": 50.89, "nu_order_pct": 49.11, "p1_pct": 31.83, "p2_pct": 11.94, "p3_pct": 22.93, "cpc_ms_pct": 34.89, "organic_orders": 621, "organic_ms": 3641}, "May": {"orders": 972, "gmv": 317034, "opd": 31.4, "days": 31, "menu_sessions": 5751, "cart_sessions": 2528, "payment_sessions": 1858, "order_sessions": 972, "cpc_burn": 2508, "total_discount": 65702, "coupon_discount": 26752, "discounted_orders": 353, "total_users": 931, "p1_orders": 312, "p2_orders": 116, "p3_orders": 223, "breakfast_orders": 111, "lunch_orders": 369, "snacks_orders": 128, "dinner_orders": 342, "ln_orders": 22, "nu_ms": 2806, "ru_ms": 2945, "nu_orders": 480, "ru_orders": 492, "r_burn": 20904, "s_burn": 15971, "impression": 1874, "availability": 0.9544, "rdc_pct": 0.2983, "m2o_pct": 16.9, "ru_order_pct": 50.62, "nu_order_pct": 49.38, "p1_pct": 32.1, "p2_pct": 11.93, "p3_pct": 22.94, "cpc_ms_pct": 32.59, "organic_orders": 655, "organic_ms": 3877}, "Jun": {"orders": 1037, "gmv": 338278, "opd": 34.6, "days": 30, "menu_sessions": 6198, "cart_sessions": 2375, "payment_sessions": 1732, "order_sessions": 1037, "cpc_burn": 2110, "total_discount": 67402, "coupon_discount": 29252, "discounted_orders": 379, "total_users": 1008, "p1_orders": 339, "p2_orders": 124, "p3_orders": 238, "breakfast_orders": 96, "lunch_orders": 315, "snacks_orders": 149, "dinner_orders": 328, "ln_orders": 149, "nu_ms": 3091, "ru_ms": 3107, "nu_orders": 523, "ru_orders": 514, "r_burn": 19132, "s_burn": 14423, "impression": 2014, "availability": 0.9278, "rdc_pct": 0.1934, "m2o_pct": 16.73, "ru_order_pct": 49.57, "nu_order_pct": 50.43, "p1_pct": 32.69, "p2_pct": 11.96, "p3_pct": 22.95, "cpc_ms_pct": 32.49, "organic_orders": 700, "organic_ms": 4184}}}, "Sly Granny": {"entity": "Azure_Hospitality_Pvt_Ltd", "monthly": {"Jan": {"orders": 3494, "gmv": 1656202, "opd": 112.7, "days": 31, "menu_sessions": 16905, "cart_sessions": 7225, "payment_sessions": 4810, "order_sessions": 3494, "cpc_burn": 9703, "total_discount": 240166, "coupon_discount": 136669, "discounted_orders": 1362, "total_users": 3295, "p1_orders": 957, "p2_orders": 419, "p3_orders": 803, "breakfast_orders": 292, "lunch_orders": 1061, "snacks_orders": 419, "dinner_orders": 1289, "ln_orders": 433, "nu_ms": 7309, "ru_ms": 9596, "nu_orders": 1473, "ru_orders": 2021, "r_burn": 102597, "s_burn": 61234, "impression": 5394, "availability": 0.9307, "rdc_pct": 0.3163, "m2o_pct": 20.67, "ru_order_pct": 57.84, "nu_order_pct": 42.16, "p1_pct": 27.39, "p2_pct": 11.99, "p3_pct": 22.98, "cpc_ms_pct": 31.91, "organic_orders": 2379, "organic_ms": 11511}, "Feb": {"orders": 3525, "gmv": 1584932, "opd": 125.9, "days": 28, "menu_sessions": 16829, "cart_sessions": 7202, "payment_sessions": 5217, "order_sessions": 3525, "cpc_burn": 10274, "total_discount": 316806, "coupon_discount": 165187, "discounted_orders": 1482, "total_users": 3377, "p1_orders": 986, "p2_orders": 423, "p3_orders": 810, "breakfast_orders": 329, "lunch_orders": 1225, "snacks_orders": 459, "dinner_orders": 1336, "ln_orders": 176, "nu_ms": 7211, "ru_ms": 9618, "nu_orders": 1518, "ru_orders": 2007, "r_burn": 119199, "s_burn": 49843, "impression": 6248, "availability": 0.954, "rdc_pct": 0.3036, "m2o_pct": 20.95, "ru_order_pct": 56.94, "nu_order_pct": 43.06, "p1_pct": 27.97, "p2_pct": 12.0, "p3_pct": 22.98, "cpc_ms_pct": 37.13, "organic_orders": 2216, "organic_ms": 10581}, "Mar": {"orders": 3628, "gmv": 1636993, "opd": 117.0, "days": 31, "menu_sessions": 17235, "cart_sessions": 7248, "payment_sessions": 5242, "order_sessions": 3628, "cpc_burn": 11027, "total_discount": 284740, "coupon_discount": 169220, "discounted_orders": 1654, "total_users": 3536, "p1_orders": 1013, "p2_orders": 435, "p3_orders": 834, "breakfast_orders": 392, "lunch_orders": 1109, "snacks_orders": 499, "dinner_orders": 1298, "ln_orders": 330, "nu_ms": 7371, "ru_ms": 9864, "nu_orders": 1559, "ru_orders": 2069, "r_burn": 63486, "s_burn": 41394, "impression": 5325, "availability": 0.9623, "rdc_pct": 0.2076, "m2o_pct": 21.05, "ru_order_pct": 57.03, "nu_order_pct": 42.97, "p1_pct": 27.92, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 30.9, "organic_orders": 2507, "organic_ms": 11910}, "Apr": {"orders": 3689, "gmv": 1775490, "opd": 123.0, "days": 30, "menu_sessions": 17314, "cart_sessions": 7750, "payment_sessions": 5704, "order_sessions": 3689, "cpc_burn": 18873, "total_discount": 353444, "coupon_discount": 142361, "discounted_orders": 1687, "total_users": 3494, "p1_orders": 995, "p2_orders": 442, "p3_orders": 848, "breakfast_orders": 358, "lunch_orders": 1280, "snacks_orders": 446, "dinner_orders": 1470, "ln_orders": 135, "nu_ms": 7463, "ru_ms": 9851, "nu_orders": 1531, "ru_orders": 2158, "r_burn": 124692, "s_burn": 61487, "impression": 7721, "availability": 0.9176, "rdc_pct": 0.1897, "m2o_pct": 21.31, "ru_order_pct": 58.5, "nu_order_pct": 41.5, "p1_pct": 26.97, "p2_pct": 11.98, "p3_pct": 22.99, "cpc_ms_pct": 44.59, "organic_orders": 2043, "organic_ms": 9593}, "May": {"orders": 3815, "gmv": 1822329, "opd": 123.1, "days": 31, "menu_sessions": 18211, "cart_sessions": 8086, "payment_sessions": 5434, "order_sessions": 3815, "cpc_burn": 17719, "total_discount": 244152, "coupon_discount": 143867, "discounted_orders": 1567, "total_users": 3622, "p1_orders": 1066, "p2_orders": 457, "p3_orders": 877, "breakfast_orders": 216, "lunch_orders": 1406, "snacks_orders": 341, "dinner_orders": 1352, "ln_orders": 500, "nu_ms": 7726, "ru_ms": 10485, "nu_orders": 1641, "ru_orders": 2174, "r_burn": 82204, "s_burn": 66209, "impression": 7553, "availability": 0.962, "rdc_pct": 0.3108, "m2o_pct": 20.95, "ru_order_pct": 56.99, "nu_order_pct": 43.01, "p1_pct": 27.94, "p2_pct": 11.98, "p3_pct": 22.99, "cpc_ms_pct": 41.47, "organic_orders": 2232, "organic_ms": 10658}, "Jun": {"orders": 4143, "gmv": 1951951, "opd": 138.1, "days": 30, "menu_sessions": 19455, "cart_sessions": 7957, "payment_sessions": 5250, "order_sessions": 4143, "cpc_burn": 15596, "total_discount": 320780, "coupon_discount": 189296, "discounted_orders": 2158, "total_users": 3836, "p1_orders": 1132, "p2_orders": 497, "p3_orders": 952, "breakfast_orders": 406, "lunch_orders": 1385, "snacks_orders": 615, "dinner_orders": 1421, "ln_orders": 316, "nu_ms": 8121, "ru_ms": 11334, "nu_orders": 1742, "ru_orders": 2401, "r_burn": 61752, "s_burn": 67969, "impression": 6451, "availability": 0.9233, "rdc_pct": 0.1708, "m2o_pct": 21.3, "ru_order_pct": 57.95, "nu_order_pct": 42.05, "p1_pct": 27.32, "p2_pct": 12.0, "p3_pct": 22.98, "cpc_ms_pct": 33.16, "organic_orders": 2769, "organic_ms": 13004}}}, "Tereza Beach House by Sly Granny": {"entity": "Azure_Hospitality_Pvt_Ltd", "monthly": {"Jan": {"orders": 735, "gmv": 402419, "opd": 23.7, "days": 31, "menu_sessions": 4623, "cart_sessions": 1964, "payment_sessions": 1393, "order_sessions": 735, "cpc_burn": 2286, "total_discount": 51051, "coupon_discount": 28233, "discounted_orders": 287, "total_users": 685, "p1_orders": 252, "p2_orders": 88, "p3_orders": 169, "breakfast_orders": 81, "lunch_orders": 229, "snacks_orders": 66, "dinner_orders": 299, "ln_orders": 60, "nu_ms": 2332, "ru_ms": 2291, "nu_orders": 389, "ru_orders": 346, "r_burn": 14606, "s_burn": 17136, "impression": 1883, "availability": 0.9701, "rdc_pct": 0.1746, "m2o_pct": 15.9, "ru_order_pct": 47.07, "nu_order_pct": 52.93, "p1_pct": 34.29, "p2_pct": 11.97, "p3_pct": 22.99, "cpc_ms_pct": 40.73, "organic_orders": 435, "organic_ms": 2740}, "Feb": {"orders": 682, "gmv": 365747, "opd": 24.4, "days": 28, "menu_sessions": 4207, "cart_sessions": 1793, "payment_sessions": 1170, "order_sessions": 682, "cpc_burn": 2067, "total_discount": 45806, "coupon_discount": 25117, "discounted_orders": 310, "total_users": 657, "p1_orders": 234, "p2_orders": 81, "p3_orders": 156, "breakfast_orders": 56, "lunch_orders": 244, "snacks_orders": 79, "dinner_orders": 213, "ln_orders": 90, "nu_ms": 2188, "ru_ms": 2019, "nu_orders": 361, "ru_orders": 321, "r_burn": 16893, "s_burn": 9864, "impression": 1716, "availability": 0.9762, "rdc_pct": 0.1574, "m2o_pct": 16.21, "ru_order_pct": 47.07, "nu_order_pct": 52.93, "p1_pct": 34.31, "p2_pct": 11.88, "p3_pct": 22.87, "cpc_ms_pct": 40.79, "organic_orders": 403, "organic_ms": 2491}, "Mar": {"orders": 731, "gmv": 416804, "opd": 23.6, "days": 31, "menu_sessions": 4572, "cart_sessions": 1883, "payment_sessions": 1405, "order_sessions": 731, "cpc_burn": 2343, "total_discount": 87933, "coupon_discount": 36466, "discounted_orders": 267, "total_users": 699, "p1_orders": 251, "p2_orders": 87, "p3_orders": 168, "breakfast_orders": 39, "lunch_orders": 224, "snacks_orders": 90, "dinner_orders": 267, "ln_orders": 111, "nu_ms": 2352, "ru_ms": 2220, "nu_orders": 387, "ru_orders": 344, "r_burn": 26803, "s_burn": 16510, "impression": 1580, "availability": 0.9796, "rdc_pct": 0.2402, "m2o_pct": 15.99, "ru_order_pct": 47.06, "nu_order_pct": 52.94, "p1_pct": 34.34, "p2_pct": 11.9, "p3_pct": 22.98, "cpc_ms_pct": 34.56, "organic_orders": 478, "organic_ms": 2992}, "Apr": {"orders": 753, "gmv": 418516, "opd": 25.1, "days": 30, "menu_sessions": 4630, "cart_sessions": 1986, "payment_sessions": 1460, "order_sessions": 753, "cpc_burn": 3786, "total_discount": 59785, "coupon_discount": 27967, "discounted_orders": 331, "total_users": 711, "p1_orders": 253, "p2_orders": 90, "p3_orders": 173, "breakfast_orders": 42, "lunch_orders": 242, "snacks_orders": 95, "dinner_orders": 259, "ln_orders": 115, "nu_ms": 2357, "ru_ms": 2273, "nu_orders": 390, "ru_orders": 363, "r_burn": 17055, "s_burn": 15930, "impression": 1869, "availability": 0.9746, "rdc_pct": 0.1614, "m2o_pct": 16.26, "ru_order_pct": 48.21, "nu_order_pct": 51.79, "p1_pct": 33.6, "p2_pct": 11.95, "p3_pct": 22.97, "cpc_ms_pct": 40.37, "organic_orders": 449, "organic_ms": 2761}, "May": {"orders": 801, "gmv": 422630, "opd": 25.8, "days": 31, "menu_sessions": 4925, "cart_sessions": 2126, "payment_sessions": 1554, "order_sessions": 801, "cpc_burn": 3172, "total_discount": 65660, "coupon_discount": 35001, "discounted_orders": 400, "total_users": 778, "p1_orders": 270, "p2_orders": 96, "p3_orders": 184, "breakfast_orders": 80, "lunch_orders": 301, "snacks_orders": 97, "dinner_orders": 274, "ln_orders": 49, "nu_ms": 2572, "ru_ms": 2353, "nu_orders": 416, "ru_orders": 385, "r_burn": 19645, "s_burn": 10519, "impression": 1808, "availability": 0.9249, "rdc_pct": 0.2616, "m2o_pct": 16.26, "ru_order_pct": 48.06, "nu_order_pct": 51.94, "p1_pct": 33.71, "p2_pct": 11.99, "p3_pct": 22.97, "cpc_ms_pct": 36.71, "organic_orders": 506, "organic_ms": 3117}, "Jun": {"orders": 818, "gmv": 432274, "opd": 27.3, "days": 30, "menu_sessions": 5183, "cart_sessions": 2102, "payment_sessions": 1526, "order_sessions": 818, "cpc_burn": 4769, "total_discount": 78396, "coupon_discount": 41435, "discounted_orders": 290, "total_users": 798, "p1_orders": 276, "p2_orders": 98, "p3_orders": 188, "breakfast_orders": 88, "lunch_orders": 250, "snacks_orders": 75, "dinner_orders": 314, "ln_orders": 91, "nu_ms": 2664, "ru_ms": 2519, "nu_orders": 425, "ru_orders": 393, "r_burn": 34032, "s_burn": 22797, "impression": 2132, "availability": 0.9338, "rdc_pct": 0.151, "m2o_pct": 15.78, "ru_order_pct": 48.04, "nu_order_pct": 51.96, "p1_pct": 33.74, "p2_pct": 11.98, "p3_pct": 22.98, "cpc_ms_pct": 41.13, "organic_orders": 481, "organic_ms": 3051}}}, "The Outpost By Sly Granny": {"entity": "Azure_Hospitality_Pvt_Ltd", "monthly": {"Jan": {"orders": 551, "gmv": 271781, "opd": 17.8, "days": 31, "menu_sessions": 3658, "cart_sessions": 1426, "payment_sessions": 1017, "order_sessions": 551, "cpc_burn": 1702, "total_discount": 42671, "coupon_discount": 23227, "discounted_orders": 278, "total_users": 525, "p1_orders": 193, "p2_orders": 66, "p3_orders": 126, "breakfast_orders": 30, "lunch_orders": 157, "snacks_orders": 50, "dinner_orders": 206, "ln_orders": 108, "nu_ms": 1958, "ru_ms": 1700, "nu_orders": 297, "ru_orders": 254, "r_burn": 13859, "s_burn": 9142, "impression": 1460, "availability": 0.929, "rdc_pct": 0.2625, "m2o_pct": 15.06, "ru_order_pct": 46.1, "nu_order_pct": 53.9, "p1_pct": 35.03, "p2_pct": 11.98, "p3_pct": 22.87, "cpc_ms_pct": 39.91, "organic_orders": 331, "organic_ms": 2198}, "Feb": {"orders": 523, "gmv": 254785, "opd": 18.7, "days": 28, "menu_sessions": 3455, "cart_sessions": 1495, "payment_sessions": 988, "order_sessions": 523, "cpc_burn": 2069, "total_discount": 31731, "coupon_discount": 15201, "discounted_orders": 245, "total_users": 481, "p1_orders": 180, "p2_orders": 62, "p3_orders": 120, "breakfast_orders": 37, "lunch_orders": 157, "snacks_orders": 46, "dinner_orders": 172, "ln_orders": 111, "nu_ms": 1812, "ru_ms": 1643, "nu_orders": 278, "ru_orders": 245, "r_burn": 13843, "s_burn": 11895, "impression": 1059, "availability": 0.9105, "rdc_pct": 0.277, "m2o_pct": 15.14, "ru_order_pct": 46.85, "nu_order_pct": 53.15, "p1_pct": 34.42, "p2_pct": 11.85, "p3_pct": 22.94, "cpc_ms_pct": 30.65, "organic_orders": 362, "organic_ms": 2396}, "Mar": {"orders": 529, "gmv": 256105, "opd": 17.1, "days": 31, "menu_sessions": 3555, "cart_sessions": 1475, "payment_sessions": 1081, "order_sessions": 529, "cpc_burn": 2127, "total_discount": 54324, "coupon_discount": 31096, "discounted_orders": 246, "total_users": 504, "p1_orders": 180, "p2_orders": 63, "p3_orders": 121, "breakfast_orders": 52, "lunch_orders": 170, "snacks_orders": 46, "dinner_orders": 160, "ln_orders": 101, "nu_ms": 1864, "ru_ms": 1691, "nu_orders": 278, "ru_orders": 251, "r_burn": 8225, "s_burn": 5314, "impression": 939, "availability": 0.9661, "rdc_pct": 0.2551, "m2o_pct": 14.88, "ru_order_pct": 47.45, "nu_order_pct": 52.55, "p1_pct": 34.03, "p2_pct": 11.91, "p3_pct": 22.87, "cpc_ms_pct": 26.41, "organic_orders": 389, "organic_ms": 2616}, "Apr": {"orders": 577, "gmv": 294598, "opd": 19.2, "days": 30, "menu_sessions": 3783, "cart_sessions": 1661, "payment_sessions": 1120, "order_sessions": 577, "cpc_burn": 1977, "total_discount": 45164, "coupon_discount": 19584, "discounted_orders": 260, "total_users": 534, "p1_orders": 198, "p2_orders": 69, "p3_orders": 132, "breakfast_orders": 49, "lunch_orders": 213, "snacks_orders": 60, "dinner_orders": 223, "ln_orders": 32, "nu_ms": 2043, "ru_ms": 1740, "nu_orders": 305, "ru_orders": 272, "r_burn": 13408, "s_burn": 9893, "impression": 1342, "availability": 0.9671, "rdc_pct": 0.1902, "m2o_pct": 15.25, "ru_order_pct": 47.14, "nu_order_pct": 52.86, "p1_pct": 34.32, "p2_pct": 11.96, "p3_pct": 22.88, "cpc_ms_pct": 35.47, "organic_orders": 372, "organic_ms": 2441}, "May": {"orders": 576, "gmv": 273696, "opd": 18.6, "days": 31, "menu_sessions": 3855, "cart_sessions": 1670, "payment_sessions": 1194, "order_sessions": 576, "cpc_burn": 2557, "total_discount": 45130, "coupon_discount": 26393, "discounted_orders": 266, "total_users": 551, "p1_orders": 200, "p2_orders": 69, "p3_orders": 132, "breakfast_orders": 53, "lunch_orders": 211, "snacks_orders": 71, "dinner_orders": 183, "ln_orders": 58, "nu_ms": 1990, "ru_ms": 1865, "nu_orders": 309, "ru_orders": 267, "r_burn": 18535, "s_burn": 13793, "impression": 1559, "availability": 0.941, "rdc_pct": 0.2015, "m2o_pct": 14.94, "ru_order_pct": 46.35, "nu_order_pct": 53.65, "p1_pct": 34.72, "p2_pct": 11.98, "p3_pct": 22.92, "cpc_ms_pct": 40.44, "organic_orders": 343, "organic_ms": 2296}, "Jun": {"orders": 616, "gmv": 288443, "opd": 20.5, "days": 30, "menu_sessions": 4107, "cart_sessions": 1649, "payment_sessions": 1146, "order_sessions": 616, "cpc_burn": 1590, "total_discount": 52353, "coupon_discount": 26250, "discounted_orders": 272, "total_users": 587, "p1_orders": 215, "p2_orders": 73, "p3_orders": 141, "breakfast_orders": 64, "lunch_orders": 227, "snacks_orders": 68, "dinner_orders": 244, "ln_orders": 13, "nu_ms": 2196, "ru_ms": 1911, "nu_orders": 332, "ru_orders": 284, "r_burn": 21118, "s_burn": 15637, "impression": 1709, "availability": 0.9325, "rdc_pct": 0.2309, "m2o_pct": 15.0, "ru_order_pct": 46.1, "nu_order_pct": 53.9, "p1_pct": 34.9, "p2_pct": 11.85, "p3_pct": 22.89, "cpc_ms_pct": 41.61, "organic_orders": 359, "organic_ms": 2398}}}, "Mr. Mamagoto": {"entity": "Azure_Hospitality_Pvt_Ltd", "monthly": {"Jan": {"orders": 2251, "gmv": 1119236, "opd": 72.6, "days": 31, "menu_sessions": 10069, "cart_sessions": 4459, "payment_sessions": 3051, "order_sessions": 2251, "cpc_burn": 3863, "total_discount": 183490, "coupon_discount": 92580, "discounted_orders": 859, "total_users": 2121, "p1_orders": 577, "p2_orders": 270, "p3_orders": 517, "breakfast_orders": 157, "lunch_orders": 722, "snacks_orders": 233, "dinner_orders": 836, "ln_orders": 303, "nu_ms": 4097, "ru_ms": 5972, "nu_orders": 889, "ru_orders": 1362, "r_burn": 47441, "s_burn": 41983, "impression": 3533, "availability": 0.9553, "rdc_pct": 0.1612, "m2o_pct": 22.36, "ru_order_pct": 60.51, "nu_order_pct": 39.49, "p1_pct": 25.63, "p2_pct": 11.99, "p3_pct": 22.97, "cpc_ms_pct": 35.09, "organic_orders": 1461, "organic_ms": 6536}, "Feb": {"orders": 2176, "gmv": 1151704, "opd": 77.7, "days": 28, "menu_sessions": 9805, "cart_sessions": 4222, "payment_sessions": 3021, "order_sessions": 2176, "cpc_burn": 5690, "total_discount": 178493, "coupon_discount": 105943, "discounted_orders": 1065, "total_users": 2053, "p1_orders": 552, "p2_orders": 261, "p3_orders": 500, "breakfast_orders": 199, "lunch_orders": 813, "snacks_orders": 221, "dinner_orders": 751, "ln_orders": 192, "nu_ms": 3990, "ru_ms": 5815, "nu_orders": 850, "ru_orders": 1326, "r_burn": 68108, "s_burn": 29549, "impression": 4163, "availability": 0.9669, "rdc_pct": 0.2639, "m2o_pct": 22.19, "ru_order_pct": 60.94, "nu_order_pct": 39.06, "p1_pct": 25.37, "p2_pct": 11.99, "p3_pct": 22.98, "cpc_ms_pct": 42.46, "organic_orders": 1252, "organic_ms": 5642}, "Mar": {"orders": 2343, "gmv": 1247451, "opd": 75.6, "days": 31, "menu_sessions": 10728, "cart_sessions": 4471, "payment_sessions": 3194, "order_sessions": 2343, "cpc_burn": 4898, "total_discount": 267911, "coupon_discount": 133220, "discounted_orders": 926, "total_users": 2174, "p1_orders": 612, "p2_orders": 281, "p3_orders": 538, "breakfast_orders": 129, "lunch_orders": 853, "snacks_orders": 204, "dinner_orders": 919, "ln_orders": 238, "nu_ms": 4377, "ru_ms": 6351, "nu_orders": 942, "ru_orders": 1401, "r_burn": 48667, "s_burn": 35637, "impression": 3458, "availability": 0.9719, "rdc_pct": 0.1564, "m2o_pct": 21.84, "ru_order_pct": 59.8, "nu_order_pct": 40.2, "p1_pct": 26.12, "p2_pct": 11.99, "p3_pct": 22.96, "cpc_ms_pct": 32.23, "organic_orders": 1587, "organic_ms": 7270}, "Apr": {"orders": 2389, "gmv": 1275363, "opd": 79.6, "days": 30, "menu_sessions": 10698, "cart_sessions": 4347, "payment_sessions": 2896, "order_sessions": 2389, "cpc_burn": 9406, "total_discount": 205443, "coupon_discount": 109968, "discounted_orders": 949, "total_users": 2261, "p1_orders": 609, "p2_orders": 286, "p3_orders": 549, "breakfast_orders": 167, "lunch_orders": 847, "snacks_orders": 266, "dinner_orders": 869, "ln_orders": 240, "nu_ms": 4230, "ru_ms": 6468, "nu_orders": 937, "ru_orders": 1452, "r_burn": 48817, "s_burn": 47835, "impression": 4324, "availability": 0.9666, "rdc_pct": 0.2297, "m2o_pct": 22.33, "ru_order_pct": 60.78, "nu_order_pct": 39.22, "p1_pct": 25.49, "p2_pct": 11.97, "p3_pct": 22.98, "cpc_ms_pct": 40.42, "organic_orders": 1423, "organic_ms": 6374}, "May": {"orders": 2559, "gmv": 1313094, "opd": 82.5, "days": 31, "menu_sessions": 11839, "cart_sessions": 5314, "payment_sessions": 3699, "order_sessions": 2559, "cpc_burn": 6554, "total_discount": 262784, "coupon_discount": 112387, "discounted_orders": 1023, "total_users": 2452, "p1_orders": 674, "p2_orders": 307, "p3_orders": 588, "breakfast_orders": 284, "lunch_orders": 858, "snacks_orders": 223, "dinner_orders": 1027, "ln_orders": 167, "nu_ms": 4835, "ru_ms": 7004, "nu_orders": 1038, "ru_orders": 1521, "r_burn": 102833, "s_burn": 69168, "impression": 3863, "availability": 0.93, "rdc_pct": 0.2797, "m2o_pct": 21.62, "ru_order_pct": 59.44, "nu_order_pct": 40.56, "p1_pct": 26.34, "p2_pct": 12.0, "p3_pct": 22.98, "cpc_ms_pct": 32.63, "organic_orders": 1724, "organic_ms": 7976}, "Jun": {"orders": 2623, "gmv": 1419242, "opd": 87.4, "days": 30, "menu_sessions": 11754, "cart_sessions": 4826, "payment_sessions": 3593, "order_sessions": 2623, "cpc_burn": 5576, "total_discount": 241556, "coupon_discount": 108013, "discounted_orders": 1439, "total_users": 2472, "p1_orders": 693, "p2_orders": 314, "p3_orders": 603, "breakfast_orders": 136, "lunch_orders": 978, "snacks_orders": 363, "dinner_orders": 991, "ln_orders": 155, "nu_ms": 4783, "ru_ms": 6971, "nu_orders": 1067, "ru_orders": 1556, "r_burn": 44470, "s_burn": 31408, "impression": 3999, "availability": 0.9196, "rdc_pct": 0.1988, "m2o_pct": 22.32, "ru_order_pct": 59.32, "nu_order_pct": 40.68, "p1_pct": 26.42, "p2_pct": 11.97, "p3_pct": 22.99, "cpc_ms_pct": 34.02, "organic_orders": 1730, "organic_ms": 7755}}}, "Creme Castle - Cakes And Desserts": {"entity": "CREMTECH_TAILORED_FOODS_PRIVATE_LIMITED", "monthly": {"Jan": {"orders": 11727, "gmv": 3347941, "opd": 378.3, "days": 31, "menu_sessions": 46230, "cart_sessions": 19850, "payment_sessions": 13792, "order_sessions": 11727, "cpc_burn": 15179, "total_discount": 645227, "coupon_discount": 326197, "discounted_orders": 4365, "total_users": 10991, "p1_orders": 2766, "p2_orders": 1407, "p3_orders": 2697, "breakfast_orders": 833, "lunch_orders": 3339, "snacks_orders": 1282, "dinner_orders": 4635, "ln_orders": 1638, "nu_ms": 16138, "ru_ms": 30092, "nu_orders": 4256, "ru_orders": 7471, "r_burn": 240209, "s_burn": 140453, "impression": 12290, "availability": 0.9178, "rdc_pct": 0.3039, "m2o_pct": 25.37, "ru_order_pct": 63.71, "nu_order_pct": 36.29, "p1_pct": 23.59, "p2_pct": 12.0, "p3_pct": 23.0, "cpc_ms_pct": 26.58, "organic_orders": 8609, "organic_ms": 33940}, "Feb": {"orders": 11219, "gmv": 2989417, "opd": 400.7, "days": 28, "menu_sessions": 44903, "cart_sessions": 17823, "payment_sessions": 11840, "order_sessions": 11219, "cpc_burn": 20246, "total_discount": 384324, "coupon_discount": 228646, "discounted_orders": 4078, "total_users": 10675, "p1_orders": 2566, "p2_orders": 1346, "p3_orders": 2580, "breakfast_orders": 959, "lunch_orders": 4250, "snacks_orders": 1332, "dinner_orders": 3891, "ln_orders": 787, "nu_ms": 15687, "ru_ms": 29216, "nu_orders": 3948, "ru_orders": 7271, "r_burn": 151947, "s_burn": 139232, "impression": 16747, "availability": 0.9545, "rdc_pct": 0.3168, "m2o_pct": 24.98, "ru_order_pct": 64.81, "nu_order_pct": 35.19, "p1_pct": 22.87, "p2_pct": 12.0, "p3_pct": 23.0, "cpc_ms_pct": 37.3, "organic_orders": 7034, "organic_ms": 28156}, "Mar": {"orders": 11319, "gmv": 3016002, "opd": 365.1, "days": 31, "menu_sessions": 45798, "cart_sessions": 18508, "payment_sessions": 13386, "order_sessions": 11319, "cpc_burn": 37954, "total_discount": 526598, "coupon_discount": 296318, "discounted_orders": 4358, "total_users": 10942, "p1_orders": 2550, "p2_orders": 1358, "p3_orders": 2603, "breakfast_orders": 934, "lunch_orders": 3956, "snacks_orders": 1406, "dinner_orders": 4497, "ln_orders": 526, "nu_ms": 15609, "ru_ms": 30189, "nu_orders": 3924, "ru_orders": 7395, "r_burn": 140624, "s_burn": 65669, "impression": 18516, "availability": 0.9643, "rdc_pct": 0.2278, "m2o_pct": 24.72, "ru_order_pct": 65.33, "nu_order_pct": 34.67, "p1_pct": 22.53, "p2_pct": 12.0, "p3_pct": 23.0, "cpc_ms_pct": 40.43, "organic_orders": 6742, "organic_ms": 27282}, "Apr": {"orders": 11914, "gmv": 3183737, "opd": 397.1, "days": 30, "menu_sessions": 47083, "cart_sessions": 18029, "payment_sessions": 13401, "order_sessions": 11914, "cpc_burn": 36331, "total_discount": 442891, "coupon_discount": 208776, "discounted_orders": 6030, "total_users": 11579, "p1_orders": 2707, "p2_orders": 1429, "p3_orders": 2740, "breakfast_orders": 872, "lunch_orders": 3484, "snacks_orders": 1260, "dinner_orders": 4845, "ln_orders": 1453, "nu_ms": 16719, "ru_ms": 30364, "nu_orders": 4166, "ru_orders": 7748, "r_burn": 135836, "s_burn": 159606, "impression": 21084, "availability": 0.9726, "rdc_pct": 0.2157, "m2o_pct": 25.3, "ru_order_pct": 65.03, "nu_order_pct": 34.97, "p1_pct": 22.72, "p2_pct": 11.99, "p3_pct": 23.0, "cpc_ms_pct": 44.78, "organic_orders": 6578, "organic_ms": 25999}, "May": {"orders": 12903, "gmv": 3611468, "opd": 416.2, "days": 31, "menu_sessions": 51606, "cart_sessions": 22949, "payment_sessions": 16108, "order_sessions": 12903, "cpc_burn": 19062, "total_discount": 630373, "coupon_discount": 292646, "discounted_orders": 4722, "total_users": 12382, "p1_orders": 2870, "p2_orders": 1548, "p3_orders": 2967, "breakfast_orders": 921, "lunch_orders": 4390, "snacks_orders": 1417, "dinner_orders": 4938, "ln_orders": 1237, "nu_ms": 17901, "ru_ms": 33705, "nu_orders": 4416, "ru_orders": 8487, "r_burn": 217131, "s_burn": 191024, "impression": 20405, "availability": 0.913, "rdc_pct": 0.2979, "m2o_pct": 25.0, "ru_order_pct": 65.78, "nu_order_pct": 34.22, "p1_pct": 22.24, "p2_pct": 12.0, "p3_pct": 22.99, "cpc_ms_pct": 39.54, "organic_orders": 7801, "organic_ms": 31201}, "Jun": {"orders": 13181, "gmv": 3874531, "opd": 439.4, "days": 30, "menu_sessions": 52248, "cart_sessions": 23438, "payment_sessions": 17456, "order_sessions": 13181, "cpc_burn": 27960, "total_discount": 834105, "coupon_discount": 357461, "discounted_orders": 6215, "total_users": 12744, "p1_orders": 3093, "p2_orders": 1581, "p3_orders": 3031, "breakfast_orders": 691, "lunch_orders": 3779, "snacks_orders": 1772, "dinner_orders": 4533, "ln_orders": 2406, "nu_ms": 18158, "ru_ms": 34090, "nu_orders": 4759, "ru_orders": 8422, "r_burn": 271430, "s_burn": 182787, "impression": 19723, "availability": 0.9497, "rdc_pct": 0.2529, "m2o_pct": 25.23, "ru_order_pct": 63.9, "nu_order_pct": 36.1, "p1_pct": 23.47, "p2_pct": 11.99, "p3_pct": 23.0, "cpc_ms_pct": 37.75, "organic_orders": 8205, "organic_ms": 32525}}}, "PizzaExpress": {"entity": "Gourmet_Investments_Pvt_Ltd", "monthly": {"Jan": {"orders": 13948, "gmv": 7578490, "opd": 449.9, "days": 31, "menu_sessions": 49559, "cart_sessions": 21479, "payment_sessions": 15194, "order_sessions": 13948, "cpc_burn": 31104, "total_discount": 1466949, "coupon_discount": 733194, "discounted_orders": 5961, "total_users": 13302, "p1_orders": 2894, "p2_orders": 1673, "p3_orders": 3208, "breakfast_orders": 952, "lunch_orders": 4268, "snacks_orders": 1551, "dinner_orders": 5852, "ln_orders": 1325, "nu_ms": 15654, "ru_ms": 33905, "nu_orders": 4453, "ru_orders": 9495, "r_burn": 321939, "s_burn": 185961, "impression": 16334, "availability": 0.9742, "rdc_pct": 0.2335, "m2o_pct": 28.14, "ru_order_pct": 68.07, "nu_order_pct": 31.93, "p1_pct": 20.75, "p2_pct": 11.99, "p3_pct": 23.0, "cpc_ms_pct": 32.96, "organic_orders": 9350, "organic_ms": 33225}, "Feb": {"orders": 13082, "gmv": 7042655, "opd": 467.2, "days": 28, "menu_sessions": 46631, "cart_sessions": 20653, "payment_sessions": 14343, "order_sessions": 13082, "cpc_burn": 40311, "total_discount": 890853, "coupon_discount": 452940, "discounted_orders": 6910, "total_users": 12703, "p1_orders": 2816, "p2_orders": 1569, "p3_orders": 3008, "breakfast_orders": 1305, "lunch_orders": 4876, "snacks_orders": 1630, "dinner_orders": 5170, "ln_orders": 101, "nu_ms": 14929, "ru_ms": 31702, "nu_orders": 4333, "ru_orders": 8749, "r_burn": 323817, "s_burn": 238725, "impression": 18017, "availability": 0.9185, "rdc_pct": 0.1842, "m2o_pct": 28.05, "ru_order_pct": 66.88, "nu_order_pct": 33.12, "p1_pct": 21.53, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 38.64, "organic_orders": 8027, "organic_ms": 28614}, "Mar": {"orders": 13488, "gmv": 7217421, "opd": 435.1, "days": 31, "menu_sessions": 47258, "cart_sessions": 19790, "payment_sessions": 13593, "order_sessions": 13488, "cpc_burn": 31337, "total_discount": 1587540, "coupon_discount": 863263, "discounted_orders": 6138, "total_users": 13031, "p1_orders": 2733, "p2_orders": 1618, "p3_orders": 3102, "breakfast_orders": 1451, "lunch_orders": 3876, "snacks_orders": 1997, "dinner_orders": 5086, "ln_orders": 1078, "nu_ms": 15077, "ru_ms": 32181, "nu_orders": 4205, "ru_orders": 9283, "r_burn": 247635, "s_burn": 233640, "impression": 17028, "availability": 0.9576, "rdc_pct": 0.2086, "m2o_pct": 28.54, "ru_order_pct": 68.82, "nu_order_pct": 31.18, "p1_pct": 20.26, "p2_pct": 12.0, "p3_pct": 23.0, "cpc_ms_pct": 36.03, "organic_orders": 8628, "organic_ms": 30230}, "Apr": {"orders": 14805, "gmv": 7914363, "opd": 493.5, "days": 30, "menu_sessions": 53170, "cart_sessions": 20881, "payment_sessions": 15590, "order_sessions": 14805, "cpc_burn": 20546, "total_discount": 1080039, "coupon_discount": 501713, "discounted_orders": 7282, "total_users": 13927, "p1_orders": 3097, "p2_orders": 1776, "p3_orders": 3405, "breakfast_orders": 1715, "lunch_orders": 5470, "snacks_orders": 2061, "dinner_orders": 4886, "ln_orders": 673, "nu_ms": 17152, "ru_ms": 36018, "nu_orders": 4765, "ru_orders": 10040, "r_burn": 286564, "s_burn": 206728, "impression": 22977, "availability": 0.9486, "rdc_pct": 0.1713, "m2o_pct": 27.84, "ru_order_pct": 67.81, "nu_order_pct": 32.19, "p1_pct": 20.92, "p2_pct": 12.0, "p3_pct": 23.0, "cpc_ms_pct": 43.21, "organic_orders": 8407, "organic_ms": 30193}, "May": {"orders": 14877, "gmv": 7761939, "opd": 479.9, "days": 31, "menu_sessions": 53137, "cart_sessions": 20819, "payment_sessions": 15492, "order_sessions": 14877, "cpc_burn": 41077, "total_discount": 1368910, "coupon_discount": 773499, "discounted_orders": 5291, "total_users": 13727, "p1_orders": 3185, "p2_orders": 1785, "p3_orders": 3421, "breakfast_orders": 1411, "lunch_orders": 5023, "snacks_orders": 1868, "dinner_orders": 5832, "ln_orders": 743, "nu_ms": 16918, "ru_ms": 36219, "nu_orders": 4901, "ru_orders": 9976, "r_burn": 467711, "s_burn": 416825, "impression": 20284, "availability": 0.9547, "rdc_pct": 0.2347, "m2o_pct": 28.0, "ru_order_pct": 67.06, "nu_order_pct": 32.94, "p1_pct": 21.41, "p2_pct": 12.0, "p3_pct": 23.0, "cpc_ms_pct": 38.17, "organic_orders": 9197, "organic_ms": 32853}, "Jun": {"orders": 16081, "gmv": 8186241, "opd": 536.0, "days": 30, "menu_sessions": 58481, "cart_sessions": 24199, "payment_sessions": 17676, "order_sessions": 16081, "cpc_burn": 16724, "total_discount": 1378769, "coupon_discount": 607768, "discounted_orders": 7579, "total_users": 15096, "p1_orders": 3292, "p2_orders": 1929, "p3_orders": 3698, "breakfast_orders": 1612, "lunch_orders": 5683, "snacks_orders": 2255, "dinner_orders": 6706, "ln_orders": 0, "nu_ms": 18299, "ru_ms": 40182, "nu_orders": 5066, "ru_orders": 11015, "r_burn": 270110, "s_burn": 307673, "impression": 18099, "availability": 0.9359, "rdc_pct": 0.2455, "m2o_pct": 27.5, "ru_order_pct": 68.5, "nu_order_pct": 31.5, "p1_pct": 20.47, "p2_pct": 12.0, "p3_pct": 23.0, "cpc_ms_pct": 30.95, "organic_orders": 11104, "organic_ms": 40382}}}, "P.F. Chang's": {"entity": "Gourmet_Investments_Pvt_Ltd", "monthly": {"Jan": {"orders": 4648, "gmv": 3150043, "opd": 149.9, "days": 31, "menu_sessions": 24235, "cart_sessions": 9629, "payment_sessions": 6352, "order_sessions": 4648, "cpc_burn": 14621, "total_discount": 428311, "coupon_discount": 199373, "discounted_orders": 2163, "total_users": 4363, "p1_orders": 1283, "p2_orders": 557, "p3_orders": 1069, "breakfast_orders": 480, "lunch_orders": 1533, "snacks_orders": 539, "dinner_orders": 1672, "ln_orders": 424, "nu_ms": 10061, "ru_ms": 14174, "nu_orders": 1975, "ru_orders": 2673, "r_burn": 133604, "s_burn": 172031, "impression": 7920, "availability": 0.9116, "rdc_pct": 0.3107, "m2o_pct": 19.18, "ru_order_pct": 57.51, "nu_order_pct": 42.49, "p1_pct": 27.6, "p2_pct": 11.98, "p3_pct": 23.0, "cpc_ms_pct": 32.68, "organic_orders": 3129, "organic_ms": 16315}, "Feb": {"orders": 4560, "gmv": 3245510, "opd": 162.9, "days": 28, "menu_sessions": 23726, "cart_sessions": 9601, "payment_sessions": 6289, "order_sessions": 4560, "cpc_burn": 19348, "total_discount": 664412, "coupon_discount": 323027, "discounted_orders": 2400, "total_users": 4394, "p1_orders": 1245, "p2_orders": 547, "p3_orders": 1048, "breakfast_orders": 471, "lunch_orders": 1443, "snacks_orders": 492, "dinner_orders": 1680, "ln_orders": 474, "nu_ms": 9782, "ru_ms": 13944, "nu_orders": 1916, "ru_orders": 2644, "r_burn": 173730, "s_burn": 134584, "impression": 10118, "availability": 0.9487, "rdc_pct": 0.1625, "m2o_pct": 19.22, "ru_order_pct": 57.98, "nu_order_pct": 42.02, "p1_pct": 27.3, "p2_pct": 12.0, "p3_pct": 22.98, "cpc_ms_pct": 42.65, "organic_orders": 2615, "organic_ms": 13608}, "Mar": {"orders": 4696, "gmv": 3277712, "opd": 151.5, "days": 31, "menu_sessions": 24498, "cart_sessions": 11005, "payment_sessions": 7902, "order_sessions": 4696, "cpc_burn": 16022, "total_discount": 701086, "coupon_discount": 386293, "discounted_orders": 1830, "total_users": 4463, "p1_orders": 1309, "p2_orders": 563, "p3_orders": 1080, "breakfast_orders": 399, "lunch_orders": 1336, "snacks_orders": 420, "dinner_orders": 1596, "ln_orders": 945, "nu_ms": 10272, "ru_ms": 14226, "nu_orders": 2014, "ru_orders": 2682, "r_burn": 228604, "s_burn": 110011, "impression": 10902, "availability": 0.942, "rdc_pct": 0.2531, "m2o_pct": 19.17, "ru_order_pct": 57.11, "nu_order_pct": 42.89, "p1_pct": 27.87, "p2_pct": 11.99, "p3_pct": 23.0, "cpc_ms_pct": 44.5, "organic_orders": 2606, "organic_ms": 13596}, "Apr": {"orders": 4935, "gmv": 3298069, "opd": 164.5, "days": 30, "menu_sessions": 26091, "cart_sessions": 10211, "payment_sessions": 7648, "order_sessions": 4935, "cpc_burn": 11090, "total_discount": 629516, "coupon_discount": 289551, "discounted_orders": 2532, "total_users": 4649, "p1_orders": 1329, "p2_orders": 592, "p3_orders": 1135, "breakfast_orders": 479, "lunch_orders": 1865, "snacks_orders": 596, "dinner_orders": 1952, "ln_orders": 43, "nu_ms": 11106, "ru_ms": 14985, "nu_orders": 2046, "ru_orders": 2889, "r_burn": 235530, "s_burn": 136189, "impression": 8084, "availability": 0.9582, "rdc_pct": 0.1545, "m2o_pct": 18.91, "ru_order_pct": 58.54, "nu_order_pct": 41.46, "p1_pct": 26.93, "p2_pct": 12.0, "p3_pct": 23.0, "cpc_ms_pct": 30.98, "organic_orders": 3405, "organic_ms": 18007}, "May": {"orders": 5119, "gmv": 3643504, "opd": 165.1, "days": 31, "menu_sessions": 27246, "cart_sessions": 11833, "payment_sessions": 8374, "order_sessions": 5119, "cpc_burn": 10889, "total_discount": 743700, "coupon_discount": 319460, "discounted_orders": 2488, "total_users": 4719, "p1_orders": 1380, "p2_orders": 614, "p3_orders": 1177, "breakfast_orders": 595, "lunch_orders": 1489, "snacks_orders": 416, "dinner_orders": 1728, "ln_orders": 891, "nu_ms": 11203, "ru_ms": 16043, "nu_orders": 2124, "ru_orders": 2995, "r_burn": 223898, "s_burn": 163190, "impression": 9991, "availability": 0.9583, "rdc_pct": 0.2198, "m2o_pct": 18.79, "ru_order_pct": 58.51, "nu_order_pct": 41.49, "p1_pct": 26.96, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 36.67, "organic_orders": 3241, "organic_ms": 17255}, "Jun": {"orders": 5525, "gmv": 3914990, "opd": 184.2, "days": 30, "menu_sessions": 29512, "cart_sessions": 12734, "payment_sessions": 8356, "order_sessions": 5525, "cpc_burn": 11634, "total_discount": 592633, "coupon_discount": 257580, "discounted_orders": 2941, "total_users": 5196, "p1_orders": 1538, "p2_orders": 663, "p3_orders": 1270, "breakfast_orders": 413, "lunch_orders": 1973, "snacks_orders": 720, "dinner_orders": 2084, "ln_orders": 335, "nu_ms": 12538, "ru_ms": 16974, "nu_orders": 2367, "ru_orders": 3158, "r_burn": 247080, "s_burn": 160589, "impression": 8601, "availability": 0.9527, "rdc_pct": 0.1827, "m2o_pct": 18.72, "ru_order_pct": 57.16, "nu_order_pct": 42.84, "p1_pct": 27.84, "p2_pct": 12.0, "p3_pct": 22.99, "cpc_ms_pct": 29.14, "organic_orders": 3914, "organic_ms": 20911}}}, "Chillis Texmex": {"entity": "Gourmet_Investments_Pvt_Ltd", "monthly": {"Jan": {"orders": 7090, "gmv": 4136086, "opd": 228.7, "days": 31, "menu_sessions": 31872, "cart_sessions": 14281, "payment_sessions": 9707, "order_sessions": 7090, "cpc_burn": 18564, "total_discount": 882517, "coupon_discount": 493398, "discounted_orders": 2869, "total_users": 6574, "p1_orders": 1775, "p2_orders": 850, "p3_orders": 1630, "breakfast_orders": 690, "lunch_orders": 2254, "snacks_orders": 1053, "dinner_orders": 2823, "ln_orders": 270, "nu_ms": 12441, "ru_ms": 19431, "nu_orders": 2732, "ru_orders": 4358, "r_burn": 189648, "s_burn": 140429, "impression": 9289, "availability": 0.9663, "rdc_pct": 0.1994, "m2o_pct": 22.25, "ru_order_pct": 61.47, "nu_order_pct": 38.53, "p1_pct": 25.04, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 29.14, "organic_orders": 5023, "organic_ms": 22583}, "Feb": {"orders": 6895, "gmv": 4084737, "opd": 246.2, "days": 28, "menu_sessions": 31148, "cart_sessions": 12800, "payment_sessions": 8648, "order_sessions": 6895, "cpc_burn": 15517, "total_discount": 546241, "coupon_discount": 285758, "discounted_orders": 3222, "total_users": 6443, "p1_orders": 1705, "p2_orders": 827, "p3_orders": 1585, "breakfast_orders": 668, "lunch_orders": 2296, "snacks_orders": 859, "dinner_orders": 2111, "ln_orders": 961, "nu_ms": 11774, "ru_ms": 19374, "nu_orders": 2624, "ru_orders": 4271, "r_burn": 313100, "s_burn": 195442, "impression": 9045, "availability": 0.9602, "rdc_pct": 0.1671, "m2o_pct": 22.14, "ru_order_pct": 61.94, "nu_order_pct": 38.06, "p1_pct": 24.73, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 29.04, "organic_orders": 4892, "organic_ms": 22103}, "Mar": {"orders": 7310, "gmv": 4030007, "opd": 235.8, "days": 31, "menu_sessions": 33294, "cart_sessions": 14817, "payment_sessions": 10233, "order_sessions": 7310, "cpc_burn": 22840, "total_discount": 613032, "coupon_discount": 324404, "discounted_orders": 3885, "total_users": 6764, "p1_orders": 1754, "p2_orders": 877, "p3_orders": 1681, "breakfast_orders": 659, "lunch_orders": 2437, "snacks_orders": 954, "dinner_orders": 3014, "ln_orders": 246, "nu_ms": 12965, "ru_ms": 20329, "nu_orders": 2699, "ru_orders": 4611, "r_burn": 161091, "s_burn": 235983, "impression": 14172, "availability": 0.9223, "rdc_pct": 0.3, "m2o_pct": 21.96, "ru_order_pct": 63.08, "nu_order_pct": 36.92, "p1_pct": 23.99, "p2_pct": 12.0, "p3_pct": 23.0, "cpc_ms_pct": 42.57, "organic_orders": 4198, "organic_ms": 19122}, "Apr": {"orders": 7406, "gmv": 4475733, "opd": 246.9, "days": 30, "menu_sessions": 34333, "cart_sessions": 14000, "payment_sessions": 9793, "order_sessions": 7406, "cpc_burn": 36063, "total_discount": 791293, "coupon_discount": 333498, "discounted_orders": 4048, "total_users": 6939, "p1_orders": 1777, "p2_orders": 888, "p3_orders": 1703, "breakfast_orders": 883, "lunch_orders": 2476, "snacks_orders": 848, "dinner_orders": 3055, "ln_orders": 144, "nu_ms": 13321, "ru_ms": 21012, "nu_orders": 2735, "ru_orders": 4671, "r_burn": 330475, "s_burn": 91174, "impression": 15189, "availability": 0.9428, "rdc_pct": 0.1828, "m2o_pct": 21.57, "ru_order_pct": 63.07, "nu_order_pct": 36.93, "p1_pct": 23.99, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 44.24, "organic_orders": 4129, "organic_ms": 19144}, "May": {"orders": 7672, "gmv": 4299578, "opd": 247.5, "days": 31, "menu_sessions": 34815, "cart_sessions": 13856, "payment_sessions": 9264, "order_sessions": 7672, "cpc_burn": 25082, "total_discount": 884056, "coupon_discount": 512230, "discounted_orders": 3954, "total_users": 7295, "p1_orders": 1866, "p2_orders": 920, "p3_orders": 1764, "breakfast_orders": 430, "lunch_orders": 2661, "snacks_orders": 712, "dinner_orders": 2431, "ln_orders": 1438, "nu_ms": 13089, "ru_ms": 21726, "nu_orders": 2871, "ru_orders": 4801, "r_burn": 291787, "s_burn": 116174, "impression": 14209, "availability": 0.9274, "rdc_pct": 0.1943, "m2o_pct": 22.04, "ru_order_pct": 62.58, "nu_order_pct": 37.42, "p1_pct": 24.32, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 40.81, "organic_orders": 4540, "organic_ms": 20606}, "Jun": {"orders": 8194, "gmv": 4873118, "opd": 273.1, "days": 30, "menu_sessions": 37921, "cart_sessions": 15211, "payment_sessions": 10986, "order_sessions": 8194, "cpc_burn": 28552, "total_discount": 734285, "coupon_discount": 353252, "discounted_orders": 3691, "total_users": 7978, "p1_orders": 2089, "p2_orders": 983, "p3_orders": 1884, "breakfast_orders": 813, "lunch_orders": 2549, "snacks_orders": 722, "dinner_orders": 3359, "ln_orders": 751, "nu_ms": 14232, "ru_ms": 23689, "nu_orders": 3214, "ru_orders": 4980, "r_burn": 161331, "s_burn": 120507, "impression": 14437, "availability": 0.953, "rdc_pct": 0.1873, "m2o_pct": 21.61, "ru_order_pct": 60.78, "nu_order_pct": 39.22, "p1_pct": 25.49, "p2_pct": 12.0, "p3_pct": 22.99, "cpc_ms_pct": 38.07, "organic_orders": 5074, "organic_ms": 23484}}}, "Salad Days": {"entity": "Salad_Days", "monthly": {"Jan": {"orders": 6161, "gmv": 2022091, "opd": 198.7, "days": 31, "menu_sessions": 25925, "cart_sessions": 10950, "payment_sessions": 7572, "order_sessions": 6161, "cpc_burn": 15290, "total_discount": 292691, "coupon_discount": 161257, "discounted_orders": 3232, "total_users": 5698, "p1_orders": 1476, "p2_orders": 739, "p3_orders": 1417, "breakfast_orders": 500, "lunch_orders": 2158, "snacks_orders": 526, "dinner_orders": 2265, "ln_orders": 712, "nu_ms": 9340, "ru_ms": 16585, "nu_orders": 2272, "ru_orders": 3889, "r_burn": 127806, "s_burn": 58108, "impression": 8922, "availability": 0.9483, "rdc_pct": 0.2359, "m2o_pct": 23.76, "ru_order_pct": 63.12, "nu_order_pct": 36.88, "p1_pct": 23.96, "p2_pct": 11.99, "p3_pct": 23.0, "cpc_ms_pct": 34.41, "organic_orders": 4040, "organic_ms": 17003}, "Feb": {"orders": 6137, "gmv": 2013519, "opd": 219.2, "days": 28, "menu_sessions": 25395, "cart_sessions": 10575, "payment_sessions": 6996, "order_sessions": 6137, "cpc_burn": 8887, "total_discount": 332922, "coupon_discount": 167343, "discounted_orders": 2708, "total_users": 5667, "p1_orders": 1506, "p2_orders": 736, "p3_orders": 1411, "breakfast_orders": 505, "lunch_orders": 2213, "snacks_orders": 801, "dinner_orders": 2132, "ln_orders": 486, "nu_ms": 9574, "ru_ms": 15821, "nu_orders": 2317, "ru_orders": 3820, "r_burn": 111788, "s_burn": 105403, "impression": 9310, "availability": 0.9622, "rdc_pct": 0.2483, "m2o_pct": 24.17, "ru_order_pct": 62.25, "nu_order_pct": 37.75, "p1_pct": 24.54, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 36.66, "organic_orders": 3887, "organic_ms": 16085}, "Mar": {"orders": 6122, "gmv": 2049119, "opd": 197.5, "days": 31, "menu_sessions": 25063, "cart_sessions": 11268, "payment_sessions": 8377, "order_sessions": 6122, "cpc_burn": 9347, "total_discount": 402821, "coupon_discount": 239947, "discounted_orders": 2933, "total_users": 5786, "p1_orders": 1515, "p2_orders": 734, "p3_orders": 1408, "breakfast_orders": 731, "lunch_orders": 1948, "snacks_orders": 862, "dinner_orders": 2502, "ln_orders": 79, "nu_ms": 9204, "ru_ms": 15859, "nu_orders": 2332, "ru_orders": 3790, "r_burn": 103364, "s_burn": 104011, "impression": 10946, "availability": 0.9578, "rdc_pct": 0.2625, "m2o_pct": 24.43, "ru_order_pct": 61.91, "nu_order_pct": 38.09, "p1_pct": 24.75, "p2_pct": 11.99, "p3_pct": 23.0, "cpc_ms_pct": 43.67, "organic_orders": 3448, "organic_ms": 14117}, "Apr": {"orders": 6624, "gmv": 2286738, "opd": 220.8, "days": 30, "menu_sessions": 27431, "cart_sessions": 10766, "payment_sessions": 7576, "order_sessions": 6624, "cpc_burn": 12788, "total_discount": 342636, "coupon_discount": 183208, "discounted_orders": 3039, "total_users": 6305, "p1_orders": 1590, "p2_orders": 794, "p3_orders": 1523, "breakfast_orders": 712, "lunch_orders": 2018, "snacks_orders": 690, "dinner_orders": 2206, "ln_orders": 998, "nu_ms": 10415, "ru_ms": 17016, "nu_orders": 2447, "ru_orders": 4177, "r_burn": 68999, "s_burn": 47814, "impression": 10850, "availability": 0.9608, "rdc_pct": 0.1692, "m2o_pct": 24.15, "ru_order_pct": 63.06, "nu_order_pct": 36.94, "p1_pct": 24.0, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 39.55, "organic_orders": 4003, "organic_ms": 16581}, "May": {"orders": 7001, "gmv": 2361117, "opd": 225.8, "days": 31, "menu_sessions": 29481, "cart_sessions": 13026, "payment_sessions": 8487, "order_sessions": 7001, "cpc_burn": 6827, "total_discount": 294827, "coupon_discount": 161597, "discounted_orders": 3013, "total_users": 6539, "p1_orders": 1717, "p2_orders": 840, "p3_orders": 1610, "breakfast_orders": 456, "lunch_orders": 2564, "snacks_orders": 587, "dinner_orders": 2523, "ln_orders": 871, "nu_ms": 10770, "ru_ms": 18711, "nu_orders": 2643, "ru_orders": 4358, "r_burn": 141405, "s_burn": 113644, "impression": 7965, "availability": 0.9671, "rdc_pct": 0.2744, "m2o_pct": 23.75, "ru_order_pct": 62.25, "nu_order_pct": 37.75, "p1_pct": 24.53, "p2_pct": 12.0, "p3_pct": 23.0, "cpc_ms_pct": 27.02, "organic_orders": 5109, "organic_ms": 21516}, "Jun": {"orders": 7206, "gmv": 2474030, "opd": 240.2, "days": 30, "menu_sessions": 30232, "cart_sessions": 12166, "payment_sessions": 8275, "order_sessions": 7206, "cpc_burn": 13579, "total_discount": 531550, "coupon_discount": 306143, "discounted_orders": 3835, "total_users": 6900, "p1_orders": 1775, "p2_orders": 864, "p3_orders": 1657, "breakfast_orders": 575, "lunch_orders": 2374, "snacks_orders": 1066, "dinner_orders": 2976, "ln_orders": 215, "nu_ms": 11300, "ru_ms": 18932, "nu_orders": 2732, "ru_orders": 4474, "r_burn": 111393, "s_burn": 55513, "impression": 11549, "availability": 0.965, "rdc_pct": 0.2042, "m2o_pct": 23.84, "ru_order_pct": 62.09, "nu_order_pct": 37.91, "p1_pct": 24.63, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 38.2, "organic_orders": 4453, "organic_ms": 18683}}}, "Dhaba By Claridges": {"entity": "Dhaba_By_Claridges", "monthly": {"Jan": {"orders": 3681, "gmv": 1846976, "opd": 118.7, "days": 31, "menu_sessions": 18314, "cart_sessions": 7926, "payment_sessions": 5527, "order_sessions": 3681, "cpc_burn": 11376, "total_discount": 325508, "coupon_discount": 193208, "discounted_orders": 1698, "total_users": 3416, "p1_orders": 1010, "p2_orders": 441, "p3_orders": 846, "breakfast_orders": 246, "lunch_orders": 1105, "snacks_orders": 461, "dinner_orders": 1511, "ln_orders": 358, "nu_ms": 8039, "ru_ms": 10275, "nu_orders": 1554, "ru_orders": 2127, "r_burn": 129822, "s_burn": 104520, "impression": 5680, "availability": 0.9165, "rdc_pct": 0.2732, "m2o_pct": 20.1, "ru_order_pct": 57.78, "nu_order_pct": 42.22, "p1_pct": 27.44, "p2_pct": 11.98, "p3_pct": 22.98, "cpc_ms_pct": 31.01, "organic_orders": 2539, "organic_ms": 12634}, "Feb": {"orders": 3522, "gmv": 1789035, "opd": 125.8, "days": 28, "menu_sessions": 17732, "cart_sessions": 7486, "payment_sessions": 5519, "order_sessions": 3522, "cpc_burn": 14491, "total_discount": 370236, "coupon_discount": 172750, "discounted_orders": 1906, "total_users": 3243, "p1_orders": 1001, "p2_orders": 422, "p3_orders": 810, "breakfast_orders": 407, "lunch_orders": 1325, "snacks_orders": 310, "dinner_orders": 1479, "ln_orders": 1, "nu_ms": 7615, "ru_ms": 10117, "nu_orders": 1540, "ru_orders": 1982, "r_burn": 103661, "s_burn": 70087, "impression": 7134, "availability": 0.927, "rdc_pct": 0.2527, "m2o_pct": 19.86, "ru_order_pct": 56.27, "nu_order_pct": 43.73, "p1_pct": 28.42, "p2_pct": 11.98, "p3_pct": 23.0, "cpc_ms_pct": 40.23, "organic_orders": 2105, "organic_ms": 10598}, "Mar": {"orders": 3631, "gmv": 1966501, "opd": 117.1, "days": 31, "menu_sessions": 18192, "cart_sessions": 7900, "payment_sessions": 5435, "order_sessions": 3631, "cpc_burn": 7287, "total_discount": 255371, "coupon_discount": 152269, "discounted_orders": 1611, "total_users": 3523, "p1_orders": 1013, "p2_orders": 435, "p3_orders": 835, "breakfast_orders": 413, "lunch_orders": 1151, "snacks_orders": 395, "dinner_orders": 1334, "ln_orders": 338, "nu_ms": 7691, "ru_ms": 10501, "nu_orders": 1559, "ru_orders": 2072, "r_burn": 109418, "s_burn": 78446, "impression": 5855, "availability": 0.9202, "rdc_pct": 0.1943, "m2o_pct": 19.96, "ru_order_pct": 57.06, "nu_order_pct": 42.94, "p1_pct": 27.9, "p2_pct": 11.98, "p3_pct": 23.0, "cpc_ms_pct": 32.18, "organic_orders": 2462, "organic_ms": 12337}, "Apr": {"orders": 3982, "gmv": 2087028, "opd": 132.7, "days": 30, "menu_sessions": 19844, "cart_sessions": 7752, "payment_sessions": 5294, "order_sessions": 3982, "cpc_burn": 13632, "total_discount": 304148, "coupon_discount": 171636, "discounted_orders": 2163, "total_users": 3816, "p1_orders": 1120, "p2_orders": 477, "p3_orders": 915, "breakfast_orders": 335, "lunch_orders": 1181, "snacks_orders": 540, "dinner_orders": 1275, "ln_orders": 651, "nu_ms": 8645, "ru_ms": 11199, "nu_orders": 1724, "ru_orders": 2258, "r_burn": 130920, "s_burn": 98912, "impression": 8268, "availability": 0.9442, "rdc_pct": 0.3059, "m2o_pct": 20.07, "ru_order_pct": 56.71, "nu_order_pct": 43.29, "p1_pct": 28.13, "p2_pct": 11.98, "p3_pct": 22.98, "cpc_ms_pct": 41.66, "organic_orders": 2322, "organic_ms": 11576}, "May": {"orders": 4046, "gmv": 2133756, "opd": 130.5, "days": 31, "menu_sessions": 19872, "cart_sessions": 7598, "payment_sessions": 5582, "order_sessions": 4046, "cpc_burn": 16004, "total_discount": 305433, "coupon_discount": 165372, "discounted_orders": 1423, "total_users": 3845, "p1_orders": 1104, "p2_orders": 485, "p3_orders": 930, "breakfast_orders": 307, "lunch_orders": 1382, "snacks_orders": 512, "dinner_orders": 1513, "ln_orders": 332, "nu_ms": 8536, "ru_ms": 11336, "nu_orders": 1699, "ru_orders": 2347, "r_burn": 108010, "s_burn": 114586, "impression": 7623, "availability": 0.9441, "rdc_pct": 0.1511, "m2o_pct": 20.36, "ru_order_pct": 58.01, "nu_order_pct": 41.99, "p1_pct": 27.29, "p2_pct": 11.99, "p3_pct": 22.99, "cpc_ms_pct": 38.36, "organic_orders": 2493, "organic_ms": 12249}, "Jun": {"orders": 4292, "gmv": 2122893, "opd": 143.1, "days": 30, "menu_sessions": 21485, "cart_sessions": 8577, "payment_sessions": 6413, "order_sessions": 4292, "cpc_burn": 17250, "total_discount": 277466, "coupon_discount": 116331, "discounted_orders": 1630, "total_users": 3998, "p1_orders": 1230, "p2_orders": 515, "p3_orders": 987, "breakfast_orders": 372, "lunch_orders": 1551, "snacks_orders": 423, "dinner_orders": 1492, "ln_orders": 454, "nu_ms": 9168, "ru_ms": 12317, "nu_orders": 1893, "ru_orders": 2399, "r_burn": 149257, "s_burn": 119712, "impression": 8865, "availability": 0.9384, "rdc_pct": 0.2461, "m2o_pct": 19.98, "ru_order_pct": 55.89, "nu_order_pct": 44.11, "p1_pct": 28.66, "p2_pct": 12.0, "p3_pct": 23.0, "cpc_ms_pct": 41.26, "organic_orders": 2521, "organic_ms": 12620}}}}, "cities": {"Delhi": {"monthly": {"Jan": {"orders": 46323, "gmv": 19874155, "opd": 1494.3, "days": 31}, "Feb": {"orders": 44132, "gmv": 20032163, "opd": 1576.1, "days": 28}, "Mar": {"orders": 45374, "gmv": 20614713, "opd": 1463.7, "days": 31}, "Apr": {"orders": 47942, "gmv": 20314944, "opd": 1598.1, "days": 30}, "May": {"orders": 48740, "gmv": 21548347, "opd": 1572.3, "days": 31}, "Jun": {"orders": 50655, "gmv": 21294248, "opd": 1688.5, "days": 30}}}, "Mumbai": {"monthly": {"Jan": {"orders": 37250, "gmv": 16389789, "opd": 1201.6, "days": 31}, "Feb": {"orders": 36713, "gmv": 16571332, "opd": 1311.2, "days": 28}, "Mar": {"orders": 38115, "gmv": 17316346, "opd": 1229.5, "days": 31}, "Apr": {"orders": 38896, "gmv": 17158051, "opd": 1296.5, "days": 30}, "May": {"orders": 40320, "gmv": 17275373, "opd": 1300.6, "days": 31}, "Jun": {"orders": 44916, "gmv": 20459336, "opd": 1497.2, "days": 30}}}, "Bangalore": {"monthly": {"Jan": {"orders": 31952, "gmv": 13479350, "opd": 1030.7, "days": 31}, "Feb": {"orders": 30247, "gmv": 13823587, "opd": 1080.2, "days": 28}, "Mar": {"orders": 32737, "gmv": 14487445, "opd": 1056.0, "days": 31}, "Apr": {"orders": 32628, "gmv": 14915912, "opd": 1087.6, "days": 30}, "May": {"orders": 34523, "gmv": 15827372, "opd": 1113.6, "days": 31}, "Jun": {"orders": 37200, "gmv": 16743355, "opd": 1240.0, "days": 30}}}, "Hyderabad": {"monthly": {"Jan": {"orders": 22280, "gmv": 9712561, "opd": 718.7, "days": 31}, "Feb": {"orders": 20798, "gmv": 8870306, "opd": 742.8, "days": 28}, "Mar": {"orders": 21637, "gmv": 9809913, "opd": 698.0, "days": 31}, "Apr": {"orders": 22925, "gmv": 10450614, "opd": 764.2, "days": 30}, "May": {"orders": 23760, "gmv": 10697331, "opd": 766.5, "days": 31}, "Jun": {"orders": 24892, "gmv": 11438848, "opd": 829.7, "days": 30}}}, "Pune": {"monthly": {"Jan": {"orders": 15201, "gmv": 6688922, "opd": 490.4, "days": 31}, "Feb": {"orders": 14964, "gmv": 6317021, "opd": 534.4, "days": 28}, "Mar": {"orders": 14929, "gmv": 6771003, "opd": 481.6, "days": 31}, "Apr": {"orders": 15585, "gmv": 7025098, "opd": 519.5, "days": 30}, "May": {"orders": 16811, "gmv": 7327379, "opd": 542.3, "days": 31}, "Jun": {"orders": 17631, "gmv": 7425913, "opd": 587.7, "days": 30}}}, "Chennai": {"monthly": {"Jan": {"orders": 11836, "gmv": 5441050, "opd": 381.8, "days": 31}, "Feb": {"orders": 11633, "gmv": 5051426, "opd": 415.5, "days": 28}, "Mar": {"orders": 12306, "gmv": 5381093, "opd": 397.0, "days": 31}, "Apr": {"orders": 12724, "gmv": 5680336, "opd": 424.1, "days": 30}, "May": {"orders": 12766, "gmv": 5677610, "opd": 411.8, "days": 31}, "Jun": {"orders": 14125, "gmv": 6335406, "opd": 470.8, "days": 30}}}, "Kolkata": {"monthly": {"Jan": {"orders": 8774, "gmv": 3739205, "opd": 283.0, "days": 31}, "Feb": {"orders": 8840, "gmv": 3936947, "opd": 315.7, "days": 28}, "Mar": {"orders": 9121, "gmv": 3946357, "opd": 294.2, "days": 31}, "Apr": {"orders": 9218, "gmv": 3873476, "opd": 307.3, "days": 30}, "May": {"orders": 9706, "gmv": 4216254, "opd": 313.1, "days": 31}, "Jun": {"orders": 10264, "gmv": 4365282, "opd": 342.1, "days": 30}}}, "Gurgaon": {"monthly": {"Jan": {"orders": 7849, "gmv": 3437499, "opd": 253.2, "days": 31}, "Feb": {"orders": 7785, "gmv": 3396765, "opd": 278.0, "days": 28}, "Mar": {"orders": 7765, "gmv": 3371226, "opd": 250.5, "days": 31}, "Apr": {"orders": 8187, "gmv": 3634387, "opd": 272.9, "days": 30}, "May": {"orders": 8636, "gmv": 3760197, "opd": 278.6, "days": 31}, "Jun": {"orders": 9136, "gmv": 3978837, "opd": 304.5, "days": 30}}}, "Noida": {"monthly": {"Jan": {"orders": 6825, "gmv": 3112510, "opd": 220.2, "days": 31}, "Feb": {"orders": 6955, "gmv": 3193228, "opd": 248.4, "days": 28}, "Mar": {"orders": 7023, "gmv": 2997299, "opd": 226.5, "days": 31}, "Apr": {"orders": 7290, "gmv": 3102286, "opd": 243.0, "days": 30}, "May": {"orders": 7545, "gmv": 3317725, "opd": 243.4, "days": 31}, "Jun": {"orders": 7883, "gmv": 3447922, "opd": 262.8, "days": 30}}}, "Chandigarh": {"monthly": {"Jan": {"orders": 4478, "gmv": 1967496, "opd": 144.5, "days": 31}, "Feb": {"orders": 4254, "gmv": 1829509, "opd": 151.9, "days": 28}, "Mar": {"orders": 4427, "gmv": 1970021, "opd": 142.8, "days": 31}, "Apr": {"orders": 4747, "gmv": 2030871, "opd": 158.2, "days": 30}, "May": {"orders": 4793, "gmv": 2071469, "opd": 154.6, "days": 31}, "Jun": {"orders": 5344, "gmv": 2315495, "opd": 178.1, "days": 30}}}}, "sdlw": {"Dhaba Estd 1986 Delhi": {"entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 291, "gmv": 137299, "menu_sessions": 1362, "ru_orders": 174, "nu_orders": 117, "m2o_pct": 21.37, "ru_order_pct": 59.79}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 269, "gmv": 133762, "menu_sessions": 1261, "ru_orders": 161, "nu_orders": 108, "m2o_pct": 21.33, "ru_order_pct": 59.85}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 308, "gmv": 145189, "menu_sessions": 1349, "ru_orders": 184, "nu_orders": 124, "m2o_pct": 22.83, "ru_order_pct": 59.74}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 303, "gmv": 142737, "menu_sessions": 1336, "ru_orders": 181, "nu_orders": 122, "m2o_pct": 22.68, "ru_order_pct": 59.74}}}, "Foxtrot": {"entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 108, "gmv": 44414, "menu_sessions": 565, "ru_orders": 59, "nu_orders": 49, "m2o_pct": 19.12, "ru_order_pct": 54.63}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 101, "gmv": 42742, "menu_sessions": 504, "ru_orders": 55, "nu_orders": 46, "m2o_pct": 20.04, "ru_order_pct": 54.46}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 90, "gmv": 38996, "menu_sessions": 444, "ru_orders": 49, "nu_orders": 41, "m2o_pct": 20.27, "ru_order_pct": 54.44}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 92, "gmv": 38887, "menu_sessions": 442, "ru_orders": 50, "nu_orders": 42, "m2o_pct": 20.81, "ru_order_pct": 54.35}}}, "Kenny's": {"entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 80, "gmv": 31767, "menu_sessions": 422, "ru_orders": 46, "nu_orders": 34, "m2o_pct": 18.96, "ru_order_pct": 57.5}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 79, "gmv": 30692, "menu_sessions": 434, "ru_orders": 45, "nu_orders": 34, "m2o_pct": 18.2, "ru_order_pct": 56.96}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 81, "gmv": 30931, "menu_sessions": 423, "ru_orders": 46, "nu_orders": 35, "m2o_pct": 19.15, "ru_order_pct": 56.79}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 80, "gmv": 32122, "menu_sessions": 434, "ru_orders": 46, "nu_orders": 34, "m2o_pct": 18.43, "ru_order_pct": 57.5}}}, "Maalgaadi by Dhaba Estd 1986": {"entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 48, "gmv": 17024, "menu_sessions": 266, "ru_orders": 24, "nu_orders": 24, "m2o_pct": 18.05, "ru_order_pct": 50.0}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 46, "gmv": 16447, "menu_sessions": 259, "ru_orders": 23, "nu_orders": 23, "m2o_pct": 17.76, "ru_order_pct": 50.0}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 52, "gmv": 19093, "menu_sessions": 276, "ru_orders": 27, "nu_orders": 25, "m2o_pct": 18.84, "ru_order_pct": 51.92}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 48, "gmv": 16811, "menu_sessions": 264, "ru_orders": 24, "nu_orders": 24, "m2o_pct": 18.18, "ru_order_pct": 50.0}}}, "Mamagoto": {"entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 215, "gmv": 107969, "menu_sessions": 952, "ru_orders": 133, "nu_orders": 82, "m2o_pct": 22.58, "ru_order_pct": 61.86}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 207, "gmv": 107593, "menu_sessions": 887, "ru_orders": 128, "nu_orders": 79, "m2o_pct": 23.34, "ru_order_pct": 61.84}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 193, "gmv": 92495, "menu_sessions": 850, "ru_orders": 119, "nu_orders": 74, "m2o_pct": 22.71, "ru_order_pct": 61.66}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 202, "gmv": 99536, "menu_sessions": 892, "ru_orders": 125, "nu_orders": 77, "m2o_pct": 22.65, "ru_order_pct": 61.88}}}, "Oki Poki by Mamagoto": {"entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 67, "gmv": 26691, "menu_sessions": 319, "ru_orders": 36, "nu_orders": 31, "m2o_pct": 21.0, "ru_order_pct": 53.73}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 67, "gmv": 26103, "menu_sessions": 331, "ru_orders": 36, "nu_orders": 31, "m2o_pct": 20.24, "ru_order_pct": 53.73}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 70, "gmv": 25298, "menu_sessions": 347, "ru_orders": 38, "nu_orders": 32, "m2o_pct": 20.17, "ru_order_pct": 54.29}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 59, "gmv": 22462, "menu_sessions": 295, "ru_orders": 32, "nu_orders": 27, "m2o_pct": 20.0, "ru_order_pct": 54.24}}}, "Rollmaal": {"entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 32, "gmv": 10184, "menu_sessions": 189, "ru_orders": 16, "nu_orders": 16, "m2o_pct": 16.93, "ru_order_pct": 50.0}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 30, "gmv": 9685, "menu_sessions": 181, "ru_orders": 15, "nu_orders": 15, "m2o_pct": 16.57, "ru_order_pct": 50.0}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 31, "gmv": 9448, "menu_sessions": 179, "ru_orders": 15, "nu_orders": 16, "m2o_pct": 17.32, "ru_order_pct": 48.39}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 28, "gmv": 9374, "menu_sessions": 163, "ru_orders": 14, "nu_orders": 14, "m2o_pct": 17.18, "ru_order_pct": 50.0}}}, "Sly Granny": {"entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 118, "gmv": 52335, "menu_sessions": 586, "ru_orders": 68, "nu_orders": 50, "m2o_pct": 20.14, "ru_order_pct": 57.63}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 122, "gmv": 54475, "menu_sessions": 578, "ru_orders": 70, "nu_orders": 52, "m2o_pct": 21.11, "ru_order_pct": 57.38}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 126, "gmv": 57602, "menu_sessions": 598, "ru_orders": 73, "nu_orders": 53, "m2o_pct": 21.07, "ru_order_pct": 57.94}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 132, "gmv": 59507, "menu_sessions": 617, "ru_orders": 76, "nu_orders": 56, "m2o_pct": 21.39, "ru_order_pct": 57.58}}}, "Tereza Beach House by Sly Granny": {"entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 27, "gmv": 15369, "menu_sessions": 162, "ru_orders": 12, "nu_orders": 15, "m2o_pct": 16.67, "ru_order_pct": 44.44}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 26, "gmv": 13820, "menu_sessions": 165, "ru_orders": 12, "nu_orders": 14, "m2o_pct": 15.76, "ru_order_pct": 46.15}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 28, "gmv": 14899, "menu_sessions": 170, "ru_orders": 13, "nu_orders": 15, "m2o_pct": 16.47, "ru_order_pct": 46.43}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 23, "gmv": 13230, "menu_sessions": 144, "ru_orders": 11, "nu_orders": 12, "m2o_pct": 15.97, "ru_order_pct": 47.83}}}, "The Outpost By Sly Granny": {"entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 17, "gmv": 8067, "menu_sessions": 112, "ru_orders": 7, "nu_orders": 10, "m2o_pct": 15.18, "ru_order_pct": 41.18}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 19, "gmv": 8872, "menu_sessions": 125, "ru_orders": 8, "nu_orders": 11, "m2o_pct": 15.2, "ru_order_pct": 42.11}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 19, "gmv": 9396, "menu_sessions": 122, "ru_orders": 8, "nu_orders": 11, "m2o_pct": 15.57, "ru_order_pct": 42.11}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 17, "gmv": 8085, "menu_sessions": 115, "ru_orders": 7, "nu_orders": 10, "m2o_pct": 14.78, "ru_order_pct": 41.18}}}, "Mr. Mamagoto": {"entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 88, "gmv": 43758, "menu_sessions": 412, "ru_orders": 52, "nu_orders": 36, "m2o_pct": 21.36, "ru_order_pct": 59.09}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 74, "gmv": 37275, "menu_sessions": 348, "ru_orders": 44, "nu_orders": 30, "m2o_pct": 21.26, "ru_order_pct": 59.46}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 77, "gmv": 39088, "menu_sessions": 348, "ru_orders": 46, "nu_orders": 31, "m2o_pct": 22.13, "ru_order_pct": 59.74}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 87, "gmv": 45869, "menu_sessions": 396, "ru_orders": 52, "nu_orders": 35, "m2o_pct": 21.97, "ru_order_pct": 59.77}}}, "Creme Castle - Cakes And Desserts": {"entity": "CREMTECH_TAILORED_FOODS_PRIVATE_LIMITED", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 426, "gmv": 120318, "menu_sessions": 1722, "ru_orders": 276, "nu_orders": 150, "m2o_pct": 24.74, "ru_order_pct": 64.79}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 397, "gmv": 112465, "menu_sessions": 1642, "ru_orders": 258, "nu_orders": 139, "m2o_pct": 24.18, "ru_order_pct": 64.99}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 439, "gmv": 120430, "menu_sessions": 1792, "ru_orders": 285, "nu_orders": 154, "m2o_pct": 24.5, "ru_order_pct": 64.92}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 415, "gmv": 111946, "menu_sessions": 1591, "ru_orders": 269, "nu_orders": 146, "m2o_pct": 26.08, "ru_order_pct": 64.82}}}, "PizzaExpress": {"entity": "Gourmet_Investments_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 455, "gmv": 229101, "menu_sessions": 1593, "ru_orders": 309, "nu_orders": 146, "m2o_pct": 28.56, "ru_order_pct": 67.91}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 519, "gmv": 267673, "menu_sessions": 1855, "ru_orders": 352, "nu_orders": 167, "m2o_pct": 27.98, "ru_order_pct": 67.82}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 448, "gmv": 225639, "menu_sessions": 1581, "ru_orders": 304, "nu_orders": 144, "m2o_pct": 28.34, "ru_order_pct": 67.86}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 501, "gmv": 264304, "menu_sessions": 1823, "ru_orders": 340, "nu_orders": 161, "m2o_pct": 27.48, "ru_order_pct": 67.86}}}, "P.F. Chang's": {"entity": "Gourmet_Investments_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 190, "gmv": 129066, "menu_sessions": 1005, "ru_orders": 110, "nu_orders": 80, "m2o_pct": 18.91, "ru_order_pct": 57.89}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 153, "gmv": 103530, "menu_sessions": 790, "ru_orders": 88, "nu_orders": 65, "m2o_pct": 19.37, "ru_order_pct": 57.52}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 148, "gmv": 95704, "menu_sessions": 767, "ru_orders": 85, "nu_orders": 63, "m2o_pct": 19.3, "ru_order_pct": 57.43}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 150, "gmv": 106731, "menu_sessions": 814, "ru_orders": 87, "nu_orders": 63, "m2o_pct": 18.43, "ru_order_pct": 58.0}}}, "Chillis Texmex": {"entity": "Gourmet_Investments_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 261, "gmv": 154176, "menu_sessions": 1185, "ru_orders": 161, "nu_orders": 100, "m2o_pct": 22.03, "ru_order_pct": 61.69}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 253, "gmv": 146574, "menu_sessions": 1189, "ru_orders": 156, "nu_orders": 97, "m2o_pct": 21.28, "ru_order_pct": 61.66}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 230, "gmv": 136882, "menu_sessions": 996, "ru_orders": 142, "nu_orders": 88, "m2o_pct": 23.09, "ru_order_pct": 61.74}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 240, "gmv": 139724, "menu_sessions": 1066, "ru_orders": 148, "nu_orders": 92, "m2o_pct": 22.51, "ru_order_pct": 61.67}}}, "Salad Days": {"entity": "Salad_Days", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 209, "gmv": 72783, "menu_sessions": 867, "ru_orders": 131, "nu_orders": 78, "m2o_pct": 24.11, "ru_order_pct": 62.68}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 240, "gmv": 78444, "menu_sessions": 1004, "ru_orders": 151, "nu_orders": 89, "m2o_pct": 23.9, "ru_order_pct": 62.92}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 202, "gmv": 70900, "menu_sessions": 864, "ru_orders": 127, "nu_orders": 75, "m2o_pct": 23.38, "ru_order_pct": 62.87}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 214, "gmv": 69425, "menu_sessions": 920, "ru_orders": 134, "nu_orders": 80, "m2o_pct": 23.26, "ru_order_pct": 62.62}}}, "Dhaba By Claridges": {"entity": "Dhaba_By_Claridges", "daily": {"2026-06-30": {"label": "Jun 30 (Yesterday)", "orders": 141, "gmv": 76911, "menu_sessions": 708, "ru_orders": 80, "nu_orders": 61, "m2o_pct": 19.92, "ru_order_pct": 56.74}, "2026-06-23": {"label": "Jun 23 (SDLW-1)", "orders": 120, "gmv": 63968, "menu_sessions": 619, "ru_orders": 68, "nu_orders": 52, "m2o_pct": 19.39, "ru_order_pct": 56.67}, "2026-06-16": {"label": "Jun 16 (SDLW-2)", "orders": 124, "gmv": 64156, "menu_sessions": 650, "ru_orders": 70, "nu_orders": 54, "m2o_pct": 19.08, "ru_order_pct": 56.45}, "2026-06-09": {"label": "Jun 9 (SDLW-3)", "orders": 125, "gmv": 64604, "menu_sessions": 644, "ru_orders": 71, "nu_orders": 54, "m2o_pct": 19.41, "ru_order_pct": 56.8}}}}, "pids": {"PID-D001": {"brand": "Dhaba Estd 1986 Delhi", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 107, "gmv": 53625}, "2026-06-23": {"label": "Jun 23", "orders": 86, "gmv": 43332}, "2026-06-16": {"label": "Jun 16", "orders": 96, "gmv": 44979}, "2026-06-09": {"label": "Jun 9", "orders": 99, "gmv": 48529}}}, "PID-D002": {"brand": "Dhaba Estd 1986 Delhi", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 84, "gmv": 37993}, "2026-06-23": {"label": "Jun 23", "orders": 85, "gmv": 38887}, "2026-06-16": {"label": "Jun 16", "orders": 81, "gmv": 37952}, "2026-06-09": {"label": "Jun 9", "orders": 87, "gmv": 42019}}}, "PID-D003": {"brand": "Dhaba Estd 1986 Delhi", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 89, "gmv": 44115}, "2026-06-23": {"label": "Jun 23", "orders": 88, "gmv": 40668}, "2026-06-16": {"label": "Jun 16", "orders": 104, "gmv": 53798}, "2026-06-09": {"label": "Jun 9", "orders": 99, "gmv": 44442}}}, "PID-FX001": {"brand": "Foxtrot", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 111, "gmv": 48751}, "2026-06-23": {"label": "Jun 23", "orders": 110, "gmv": 49840}, "2026-06-16": {"label": "Jun 16", "orders": 108, "gmv": 42652}, "2026-06-09": {"label": "Jun 9", "orders": 108, "gmv": 43543}}}, "PID-K001": {"brand": "Kenny's", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 84, "gmv": 34482}, "2026-06-23": {"label": "Jun 23", "orders": 85, "gmv": 34085}, "2026-06-16": {"label": "Jun 16", "orders": 78, "gmv": 30797}, "2026-06-09": {"label": "Jun 9", "orders": 73, "gmv": 28079}}}, "PID-MG001": {"brand": "Maalgaadi by Dhaba Estd 1986", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 49, "gmv": 17517}, "2026-06-23": {"label": "Jun 23", "orders": 55, "gmv": 17997}, "2026-06-16": {"label": "Jun 16", "orders": 50, "gmv": 16879}, "2026-06-09": {"label": "Jun 9", "orders": 56, "gmv": 19189}}}, "PID-M001": {"brand": "Mamagoto", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 111, "gmv": 53966}, "2026-06-23": {"label": "Jun 23", "orders": 83, "gmv": 43320}, "2026-06-16": {"label": "Jun 16", "orders": 104, "gmv": 53921}, "2026-06-09": {"label": "Jun 9", "orders": 96, "gmv": 49261}}}, "PID-M002": {"brand": "Mamagoto", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 93, "gmv": 43251}, "2026-06-23": {"label": "Jun 23", "orders": 99, "gmv": 47265}, "2026-06-16": {"label": "Jun 16", "orders": 95, "gmv": 45310}, "2026-06-09": {"label": "Jun 9", "orders": 91, "gmv": 47890}}}, "PID-OK001": {"brand": "Oki Poki by Mamagoto", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 61, "gmv": 23469}, "2026-06-23": {"label": "Jun 23", "orders": 66, "gmv": 25021}, "2026-06-16": {"label": "Jun 16", "orders": 61, "gmv": 23857}, "2026-06-09": {"label": "Jun 9", "orders": 56, "gmv": 19917}}}, "PID-R001": {"brand": "Rollmaal", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 34, "gmv": 10810}, "2026-06-23": {"label": "Jun 23", "orders": 28, "gmv": 9473}, "2026-06-16": {"label": "Jun 16", "orders": 31, "gmv": 9127}, "2026-06-09": {"label": "Jun 9", "orders": 36, "gmv": 10971}}}, "PID-SG001": {"brand": "Sly Granny", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 68, "gmv": 29438}, "2026-06-23": {"label": "Jun 23", "orders": 67, "gmv": 29138}, "2026-06-16": {"label": "Jun 16", "orders": 73, "gmv": 32366}, "2026-06-09": {"label": "Jun 9", "orders": 68, "gmv": 30031}}}, "PID-SG002": {"brand": "Sly Granny", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 62, "gmv": 30363}, "2026-06-23": {"label": "Jun 23", "orders": 58, "gmv": 26238}, "2026-06-16": {"label": "Jun 16", "orders": 61, "gmv": 28955}, "2026-06-09": {"label": "Jun 9", "orders": 59, "gmv": 27815}}}, "PID-TB001": {"brand": "Tereza Beach House by Sly Granny", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 27, "gmv": 13665}, "2026-06-23": {"label": "Jun 23", "orders": 25, "gmv": 12942}, "2026-06-16": {"label": "Jun 16", "orders": 23, "gmv": 13014}, "2026-06-09": {"label": "Jun 9", "orders": 22, "gmv": 12479}}}, "PID-OP001": {"brand": "The Outpost By Sly Granny", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 20, "gmv": 10565}, "2026-06-23": {"label": "Jun 23", "orders": 18, "gmv": 8301}, "2026-06-16": {"label": "Jun 16", "orders": 16, "gmv": 7693}, "2026-06-09": {"label": "Jun 9", "orders": 20, "gmv": 9177}}}, "PID-MR001": {"brand": "Mr. Mamagoto", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 38, "gmv": 20965}, "2026-06-23": {"label": "Jun 23", "orders": 36, "gmv": 19539}, "2026-06-16": {"label": "Jun 16", "orders": 44, "gmv": 21537}, "2026-06-09": {"label": "Jun 9", "orders": 47, "gmv": 23043}}}, "PID-MR002": {"brand": "Mr. Mamagoto", "entity": "Azure_Hospitality_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 41, "gmv": 19643}, "2026-06-23": {"label": "Jun 23", "orders": 42, "gmv": 21631}, "2026-06-16": {"label": "Jun 16", "orders": 43, "gmv": 22818}, "2026-06-09": {"label": "Jun 9", "orders": 36, "gmv": 18456}}}, "PID-C001": {"brand": "Creme Castle - Cakes And Desserts", "entity": "CREMTECH_TAILORED_FOODS_PRIVATE_LIMITED", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 146, "gmv": 43234}, "2026-06-23": {"label": "Jun 23", "orders": 121, "gmv": 31714}, "2026-06-16": {"label": "Jun 16", "orders": 149, "gmv": 42318}, "2026-06-09": {"label": "Jun 9", "orders": 134, "gmv": 40301}}}, "PID-C002": {"brand": "Creme Castle - Cakes And Desserts", "entity": "CREMTECH_TAILORED_FOODS_PRIVATE_LIMITED", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 131, "gmv": 34566}, "2026-06-23": {"label": "Jun 23", "orders": 129, "gmv": 33717}, "2026-06-16": {"label": "Jun 16", "orders": 141, "gmv": 40112}, "2026-06-09": {"label": "Jun 9", "orders": 143, "gmv": 41827}}}, "PID-C003": {"brand": "Creme Castle - Cakes And Desserts", "entity": "CREMTECH_TAILORED_FOODS_PRIVATE_LIMITED", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 146, "gmv": 43155}, "2026-06-23": {"label": "Jun 23", "orders": 145, "gmv": 39312}, "2026-06-16": {"label": "Jun 16", "orders": 139, "gmv": 38979}, "2026-06-09": {"label": "Jun 9", "orders": 149, "gmv": 40355}}}, "PID-P001": {"brand": "PizzaExpress", "entity": "Gourmet_Investments_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 108, "gmv": 59735}, "2026-06-23": {"label": "Jun 23", "orders": 142, "gmv": 73780}, "2026-06-16": {"label": "Jun 16", "orders": 110, "gmv": 57196}, "2026-06-09": {"label": "Jun 9", "orders": 128, "gmv": 66861}}}, "PID-P002": {"brand": "PizzaExpress", "entity": "Gourmet_Investments_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 142, "gmv": 79592}, "2026-06-23": {"label": "Jun 23", "orders": 141, "gmv": 69003}, "2026-06-16": {"label": "Jun 16", "orders": 138, "gmv": 72545}, "2026-06-09": {"label": "Jun 9", "orders": 119, "gmv": 63691}}}, "PID-P003": {"brand": "PizzaExpress", "entity": "Gourmet_Investments_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 134, "gmv": 74747}, "2026-06-23": {"label": "Jun 23", "orders": 135, "gmv": 64771}, "2026-06-16": {"label": "Jun 16", "orders": 108, "gmv": 54023}, "2026-06-09": {"label": "Jun 9", "orders": 107, "gmv": 51727}}}, "PID-P004": {"brand": "PizzaExpress", "entity": "Gourmet_Investments_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 135, "gmv": 70274}, "2026-06-23": {"label": "Jun 23", "orders": 129, "gmv": 67091}, "2026-06-16": {"label": "Jun 16", "orders": 121, "gmv": 64952}, "2026-06-09": {"label": "Jun 9", "orders": 109, "gmv": 57012}}}, "PID-PFC001": {"brand": "P.F. Chang's", "entity": "Gourmet_Investments_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 175, "gmv": 114763}, "2026-06-23": {"label": "Jun 23", "orders": 160, "gmv": 108997}, "2026-06-16": {"label": "Jun 16", "orders": 154, "gmv": 109882}, "2026-06-09": {"label": "Jun 9", "orders": 171, "gmv": 114247}}}, "PID-CT001": {"brand": "Chillis Texmex", "entity": "Gourmet_Investments_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 135, "gmv": 82491}, "2026-06-23": {"label": "Jun 23", "orders": 137, "gmv": 73944}, "2026-06-16": {"label": "Jun 16", "orders": 137, "gmv": 82384}, "2026-06-09": {"label": "Jun 9", "orders": 143, "gmv": 77073}}}, "PID-CT002": {"brand": "Chillis Texmex", "entity": "Gourmet_Investments_Pvt_Ltd", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 113, "gmv": 64853}, "2026-06-23": {"label": "Jun 23", "orders": 128, "gmv": 75533}, "2026-06-16": {"label": "Jun 16", "orders": 122, "gmv": 73496}, "2026-06-09": {"label": "Jun 9", "orders": 139, "gmv": 75711}}}, "PID-SD001": {"brand": "Salad Days", "entity": "Salad_Days", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 121, "gmv": 42466}, "2026-06-23": {"label": "Jun 23", "orders": 102, "gmv": 37194}, "2026-06-16": {"label": "Jun 16", "orders": 114, "gmv": 40515}, "2026-06-09": {"label": "Jun 9", "orders": 121, "gmv": 38948}}}, "PID-SD002": {"brand": "Salad Days", "entity": "Salad_Days", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 101, "gmv": 35885}, "2026-06-23": {"label": "Jun 23", "orders": 106, "gmv": 38268}, "2026-06-16": {"label": "Jun 16", "orders": 123, "gmv": 38671}, "2026-06-09": {"label": "Jun 9", "orders": 124, "gmv": 40622}}}, "PID-DBC001": {"brand": "Dhaba By Claridges", "entity": "Dhaba_By_Claridges", "daily": {"2026-06-30": {"label": "Jun 30", "orders": 116, "gmv": 62369}, "2026-06-23": {"label": "Jun 23", "orders": 137, "gmv": 66419}, "2026-06-16": {"label": "Jun 16", "orders": 132, "gmv": 67104}, "2026-06-09": {"label": "Jun 9", "orders": 133, "gmv": 69900}}}}, "entity_mapping": {"Azure_Hospitality_Pvt_Ltd": ["Dhaba Estd 1986 Delhi", "Foxtrot", "Kenny's", "Maalgaadi by Dhaba Estd 1986", "Mamagoto", "Oki Poki by Mamagoto", "Rollmaal", "Sly Granny", "Tereza Beach House by Sly Granny", "The Outpost By Sly Granny", "Mr. Mamagoto"], "CREMTECH_TAILORED_FOODS_PRIVATE_LIMITED": ["Creme Castle - Cakes And Desserts"], "Gourmet_Investments_Pvt_Ltd": ["PizzaExpress", "P.F. Chang's", "Chillis Texmex"], "Salad_Days": ["Salad Days"], "Dhaba_By_Claridges": ["Dhaba By Claridges"]}, "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"], "days_in_month": {"Jan": 31, "Feb": 28, "Mar": 31, "Apr": 30, "May": 31, "Jun": 30}, "sdlw_dates": ["2026-06-30", "2026-06-23", "2026-06-16", "2026-06-09"], "sdlw_labels": ["Jun 30 (Yesterday)", "Jun 23 (SDLW-1)", "Jun 16 (SDLW-2)", "Jun 9 (SDLW-3)"], "latest_date": "2026-06-30"};
+
+// ===== UTILITY FUNCTIONS =====
+function fmt(n, decimals=0) {
+  if (n === undefined || n === null || isNaN(n)) return '-';
+  if (Math.abs(n) >= 1e7) return (n/1e7).toFixed(2) + ' Cr';
+  if (Math.abs(n) >= 1e5) return (n/1e5).toFixed(2) + ' L';
+  if (Math.abs(n) >= 1000) return (n/1000).toFixed(1) + 'K';
+  return Number(n).toFixed(decimals);
+}
+
+function fmtPct(n) {
+  if (n === undefined || n === null || isNaN(n)) return '-';
+  return Number(n).toFixed(1) + '%';
+}
+
+function fmtOPD(n) {
+  if (n === undefined || n === null || isNaN(n)) return '-';
+  return Number(n).toFixed(1);
+}
+
+function mom(cur, prev) {
+  if (!prev || prev === 0) return '-';
+  const pct = ((cur - prev) / prev) * 100;
+  const cls = pct >= 0 ? 'mom-positive' : 'mom-negative';
+  const sign = pct >= 0 ? '+' : '';
+  return `<span class="${cls}">${sign}${pct.toFixed(1)}%</span>`;
+}
+
+function momOpd(cur, prev) {
+  if (!prev || prev === 0) return '-';
+  const pct = ((cur - prev) / prev) * 100;
+  const cls = pct >= 0 ? 'mom-positive' : 'mom-negative';
+  const sign = pct >= 0 ? '+' : '';
+  return `<span class="${cls}">${sign}${pct.toFixed(1)}%</span>`;
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.currentTarget.classList.add('active');
+  
+  if (tab === 'brand') renderBrandTab();
+  else if (tab === 'city') renderCityTab();
+  else if (tab === 'pid') renderPidTab();
+  else if (tab === 'analytics') renderAnalyticsTab();
+  else if (tab === 'sdlw') renderSdlwTab();
+}
+
+// ===== OVERVIEW TAB =====
+function renderOverview() {
+  const months = RAW_DATA.months;
+  const brands = RAW_DATA.brands;
+  const brandNames = Object.keys(brands);
+  
+  // Compute portfolio totals per month
+  let portfolioData = {};
+  months.forEach(m => {
+    portfolioData[m] = { orders:0, gmv:0, menu_sessions:0, total_discount:0, cpc_burn:0, nu_orders:0, ru_orders:0 };
+    brandNames.forEach(b => {
+      const md = brands[b].monthly[m];
+      portfolioData[m].orders += md.orders;
+      portfolioData[m].gmv += md.gmv;
+      portfolioData[m].menu_sessions += md.menu_sessions;
+      portfolioData[m].total_discount += md.total_discount;
+      portfolioData[m].cpc_burn += md.cpc_burn;
+      portfolioData[m].nu_orders += md.nu_orders;
+      portfolioData[m].ru_orders += md.ru_orders;
+    });
+  });
+  
+  // KPIs from latest month (Jun)
+  const jun = portfolioData['Jun'];
+  const may = portfolioData['May'];
+  const junDays = RAW_DATA.days_in_month['Jun'];
+  const kpiData = [
+    { label: 'Jun Orders', value: fmt(jun.orders), change: ((jun.orders - may.orders)/may.orders*100).toFixed(1), up: jun.orders >= may.orders },
+    { label: 'Jun OPD', value: fmtOPD(jun.orders / junDays), change: '', up: true },
+    { label: 'Jun GMV', value: fmt(jun.gmv), change: ((jun.gmv - may.gmv)/may.gmv*100).toFixed(1), up: jun.gmv >= may.gmv },
+    { label: 'Jun M2O%', value: fmtPct(jun.orders/jun.menu_sessions*100), change: '', up: true },
+    { label: 'Jun NU Orders', value: fmt(jun.nu_orders), change: '', up: true },
+    { label: 'Jun Total Discount', value: fmt(jun.total_discount), change: '', up: false },
+  ];
+  
+  let kpiHtml = kpiData.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      ${k.change ? `<div class="kpi-change ${k.up ? 'up':'down'}">${k.up?'▲':'▼'} ${Math.abs(k.change)}% MoM</div>` : ''}
+    </div>
+  `).join('');
+  document.getElementById('overview-kpis').innerHTML = kpiHtml;
+  
+  // Overview table
+  let th = '<tr><th>Metric</th>' + months.map(m => `<th>${m}</th>`).join('') + '</tr>';
+  
+  const rows = [
+    { label: 'Total Orders', fn: m => fmt(portfolioData[m].orders) },
+    { label: 'OPD', fn: m => fmtOPD(portfolioData[m].orders / RAW_DATA.days_in_month[m]) },
+    { label: 'GMV', fn: m => fmt(portfolioData[m].gmv) },
+    { label: 'Menu Sessions', fn: m => fmt(portfolioData[m].menu_sessions) },
+    { label: 'M2O%', fn: m => fmtPct(portfolioData[m].orders / portfolioData[m].menu_sessions * 100) },
+    { label: 'NU Orders', fn: m => fmt(portfolioData[m].nu_orders) },
+    { label: 'RU Orders', fn: m => fmt(portfolioData[m].ru_orders) },
+    { label: 'Total Discount', fn: m => fmt(portfolioData[m].total_discount) },
+    { label: 'CPC Burn', fn: m => fmt(portfolioData[m].cpc_burn) },
+  ];
+  
+  let tbody = rows.map(r => `<tr><td>${r.label}</td>${months.map(m => `<td>${r.fn(m)}</td>`).join('')}</tr>`).join('');
+  document.getElementById('overview-table').innerHTML = '<thead>' + th + '</thead><tbody>' + tbody + '</tbody>';
+}
+
+// ===== BRAND TAB =====
+function filterBrands() { renderBrandTab(); }
+
+function renderBrandTab() {
+  const entityFilter = document.getElementById('entity-filter').value;
+  const metricFilter = document.getElementById('brand-metric-filter').value;
+  const months = RAW_DATA.months;
+  const brands = RAW_DATA.brands;
+  const brandNames = Object.keys(brands).filter(b => entityFilter === 'all' || brands[b].entity === entityFilter);
+  
+  let html = '';
+  brandNames.forEach(brandName => {
+    const bd = brands[brandName];
+    html += renderBrandTable(brandName, bd, months, metricFilter);
+  });
+  document.getElementById('brand-tab-content').innerHTML = html || '<p style="color:var(--text-muted);padding:20px">No brands found for selected entity.</p>';
+}
+
+function renderBrandTable(brandName, bd, months, metricFilter) {
+  const entityDisplay = bd.entity.replace(/_/g, ' ');
+  
+  let cols, colHeaders, rowFns;
+  
+  if (metricFilter === 'orders') {
+    cols = months;
+    colHeaders = months.map(m => `<th>${m}</th>`).join('') + '<th>MoM (Jun vs May)</th>';
+    const m2Header = '<tr><th>Brand</th>' + colHeaders + '</tr>';
+    const ordersRow = (label, fn) => {
+      const vals = months.map(m => bd.monthly[m] ? fn(bd.monthly[m]) : 0);
+      const mom_val = vals.length >= 2 ? mom(vals[vals.length-1], vals[vals.length-2]) : '-';
+      return `<tr><td>${label}</td>${vals.map(v => `<td>${typeof v === 'number' ? (label==='OPD' ? fmtOPD(v) : fmt(v)) : v}</td>`).join('')}<td>${mom_val}</td></tr>`;
+    };
+    const rows = [
+      ['Orders', m => m.orders],
+      ['OPD', m => m.opd],
+    ];
+    let tbody = rows.map(([label, fn]) => {
+      const vals = months.map(m => bd.monthly[m] ? fn(bd.monthly[m]) : 0);
+      const curIdx = vals.length - 1;
+      const prevIdx = vals.length - 2;
+      const momCell = prevIdx >= 0 ? mom(vals[curIdx], vals[prevIdx]) : '-';
+      const fmtFn = label === 'OPD' ? fmtOPD : fmt;
+      return `<tr><td style="font-size:11px;color:var(--text-muted)">${label}</td>${vals.map(v => `<td>${fmtFn(v)}</td>`).join('')}<td>${momCell}</td></tr>`;
+    }).join('');
+    return `<div class="brand-section">
+      <div class="brand-title">${brandName} <span class="brand-entity">${entityDisplay}</span></div>
+      <div class="table-container"><table><thead><tr><th>Metric</th>${months.map(m=>`<th>${m}</th>`).join('')}<th>MoM</th></tr></thead><tbody>${tbody}</tbody></table></div>
+    </div>`;
+  }
+  
+  let metricRows = [];
+  if (metricFilter === 'gmv') {
+    metricRows = [
+      ['GMV', m => m.gmv],
+      ['Avg Ticket (GMV/Orders)', m => m.orders > 0 ? m.gmv/m.orders : 0],
+      ['Total Discount', m => m.total_discount],
+      ['Coupon Discount', m => m.coupon_discount],
+      ['Disc% of GMV', m => m.gmv > 0 ? m.total_discount/m.gmv*100 : 0],
+    ];
+  } else if (metricFilter === 'sessions') {
+    metricRows = [
+      ['Menu Sessions', m => m.menu_sessions],
+      ['Cart Sessions', m => m.cart_sessions],
+      ['Payment Sessions', m => m.payment_sessions],
+      ['Orders', m => m.orders],
+      ['M2O%', m => m.m2o_pct],
+      ['CPC MS%', m => m.cpc_ms_pct],
+      ['Organic MS', m => m.organic_ms],
+      ['Impression', m => m.impression],
+    ];
+  } else if (metricFilter === 'users') {
+    metricRows = [
+      ['Total Users', m => m.total_users],
+      ['NU Orders', m => m.nu_orders],
+      ['RU Orders', m => m.ru_orders],
+      ['NU Order%', m => m.nu_order_pct],
+      ['RU Order%', m => m.ru_order_pct],
+      ['NU MS', m => m.nu_ms],
+      ['RU MS', m => m.ru_ms],
+    ];
+  } else if (metricFilter === 'p_cohort') {
+    metricRows = [
+      ['P1 Orders', m => m.p1_orders],
+      ['P2 Orders', m => m.p2_orders],
+      ['P3 Orders', m => m.p3_orders],
+      ['P1%', m => m.p1_pct],
+      ['P2%', m => m.p2_pct],
+      ['P3%', m => m.p3_pct],
+    ];
+  } else if (metricFilter === 'discounts') {
+    metricRows = [
+      ['Total Discount', m => m.total_discount],
+      ['Coupon Discount', m => m.coupon_discount],
+      ['Discounted Orders', m => m.discounted_orders],
+      ['Disc% of GMV', m => m.gmv > 0 ? m.total_discount/m.gmv*100 : 0],
+      ['R Burn', m => m.r_burn],
+      ['S Burn', m => m.s_burn],
+      ['CPC Burn', m => m.cpc_burn],
+    ];
+  } else if (metricFilter === 'meal_time') {
+    metricRows = [
+      ['Breakfast Orders', m => m.breakfast_orders],
+      ['Lunch Orders', m => m.lunch_orders],
+      ['Snacks Orders', m => m.snacks_orders],
+      ['Dinner Orders', m => m.dinner_orders],
+      ['LN Orders', m => m.ln_orders],
+    ];
+  } else {
+    metricRows = [
+      ['Orders', m => m.orders],
+      ['OPD', m => m.opd],
+    ];
+  }
+  
+  const isPctMetric = name => name.includes('%');
+  
+  let tbody = metricRows.map(([label, fn]) => {
+    const vals = months.map(m => bd.monthly[m] ? fn(bd.monthly[m]) : 0);
+    const curIdx = vals.length - 1;
+    const prevIdx = vals.length - 2;
+    const momCell = prevIdx >= 0 ? mom(vals[curIdx], vals[prevIdx]) : '-';
+    const fmtFn = label === 'OPD' ? fmtOPD : (isPctMetric(label) ? fmtPct : fmt);
+    return `<tr><td style="font-size:11px;color:var(--text-muted)">${label}</td>${vals.map(v => `<td>${fmtFn(v)}</td>`).join('')}<td>${momCell}</td></tr>`;
+  }).join('');
+  
+  return `<div class="brand-section">
+    <div class="brand-title">${brandName} <span class="brand-entity">${entityDisplay}</span></div>
+    <div class="table-container"><table><thead><tr><th>Metric</th>${months.map(m=>`<th>${m}</th>`).join('')}<th>MoM</th></tr></thead><tbody>${tbody}</tbody></table></div>
+  </div>`;
+}
+
+// ===== CITY TAB =====
+function initCityFilter() {
+  const cities = Object.keys(RAW_DATA.cities);
+  // Sort by Jun OPD descending
+  cities.sort((a, b) => {
+    const aOpd = RAW_DATA.cities[a].monthly['Jun'].opd;
+    const bOpd = RAW_DATA.cities[b].monthly['Jun'].opd;
+    return bOpd - aOpd;
+  });
+  
+  const sel = document.getElementById('city-filter');
+  cities.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.text = c;
+    opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function selectAllCities() {
+  const sel = document.getElementById('city-filter');
+  for (let opt of sel.options) opt.selected = true;
+  renderCityTab();
+}
+
+function clearCities() {
+  const sel = document.getElementById('city-filter');
+  for (let opt of sel.options) opt.selected = false;
+  renderCityTab();
+}
+
+function renderCityTab() {
+  const sel = document.getElementById('city-filter');
+  const selectedCities = Array.from(sel.options).filter(o => o.selected).map(o => o.value);
+  const metricFilter = document.getElementById('city-metric-filter').value;
+  
+  const cities = RAW_DATA.cities;
+  
+  // Sort selected cities by Jun OPD descending
+  const sortedCities = selectedCities.sort((a, b) => {
+    const aOpd = cities[a].monthly['Jun'].opd;
+    const bOpd = cities[b].monthly['Jun'].opd;
+    return bOpd - aOpd;
+  });
+  
+  // Show Apr/May/Jun + MoM for the selected metric
+  const displayMonths = ['Apr', 'May', 'Jun'];
+  
+  let getVal = (city, month) => {
+    if (!cities[city] || !cities[city].monthly[month]) return 0;
+    const md = cities[city].monthly[month];
+    if (metricFilter === 'opd') return md.opd;
+    if (metricFilter === 'orders') return md.orders;
+    if (metricFilter === 'gmv') return md.gmv;
+    return md.opd;
+  };
+  
+  const fmtFn = metricFilter === 'opd' ? fmtOPD : fmt;
+  
+  let thead = `<tr><th>City</th>${displayMonths.map(m => `<th>${m}</th>`).join('')}<th>MoM (Jun vs May)</th></tr>`;
+  
+  let totalVals = displayMonths.map(m => selectedCities.reduce((s, c) => s + getVal(c, m), 0));
+  
+  let tbody = sortedCities.map(city => {
+    const vals = displayMonths.map(m => getVal(city, m));
+    const momCell = mom(vals[2], vals[1]);
+    return `<tr><td>${city}</td>${vals.map(v => `<td>${fmtFn(v)}</td>`).join('')}<td>${momCell}</td></tr>`;
+  }).join('');
+  
+  // Total row
+  const momTotal = mom(totalVals[2], totalVals[1]);
+  tbody += `<tr class="total-row"><td>TOTAL</td>${totalVals.map(v => `<td>${fmtFn(v)}</td>`).join('')}<td>${momTotal}</td></tr>`;
+  
+  document.getElementById('city-table').innerHTML = `<thead>${thead}</thead><tbody>${tbody}</tbody>`;
+}
+
+// ===== PID TAB =====
+function initPidFilter() {
+  const brands = Object.keys(RAW_DATA.pids).map(pid => RAW_DATA.pids[pid].brand);
+  const uniqueBrands = [...new Set(brands)].sort();
+  const sel = document.getElementById('pid-brand-filter');
+  uniqueBrands.forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b;
+    opt.text = b;
+    sel.appendChild(opt);
+  });
+}
+
+function renderPidTab() {
+  const brandFilter = document.getElementById('pid-brand-filter').value;
+  const pids = RAW_DATA.pids;
+  const sdlwDates = RAW_DATA.sdlw_dates;
+  const sdlwLabels = RAW_DATA.sdlw_labels;
+  
+  const filteredPids = Object.keys(pids).filter(pid => brandFilter === 'all' || pids[pid].brand === brandFilter);
+  
+  let thead = `<tr><th>PID</th><th>Brand</th>${sdlwDates.map((d, i) => `<th>Orders<br>${sdlwLabels[i].split(' ')[0]+' '+sdlwLabels[i].split(' ')[1]}</th>`).join('')}${sdlwDates.map((d, i) => `<th>GMV<br>${sdlwLabels[i].split(' ')[0]+' '+sdlwLabels[i].split(' ')[1]}</th>`).join('')}</tr>`;
+  
+  let tbody = filteredPids.map(pid => {
+    const pd = pids[pid];
+    const orderCells = sdlwDates.map(d => `<td>${pd.daily[d] ? fmt(pd.daily[d].orders) : '-'}</td>`).join('');
+    const gmvCells = sdlwDates.map(d => `<td>${pd.daily[d] ? fmt(pd.daily[d].gmv) : '-'}</td>`).join('');
+    return `<tr><td>${pid}</td><td>${pd.brand}</td>${orderCells}${gmvCells}</tr>`;
+  }).join('');
+  
+  document.getElementById('pid-table').innerHTML = `<thead>${thead}</thead><tbody>${tbody}</tbody>`;
+}
+
+// ===== ANALYTICS TAB =====
+function renderAnalyticsTab() {
+  const entityFilter = document.getElementById('analytics-entity-filter').value;
+  const months = RAW_DATA.months;
+  const brands = RAW_DATA.brands;
+  const brandNames = Object.keys(brands).filter(b => entityFilter === 'all' || brands[b].entity === entityFilter);
+  
+  // Aggregate by month
+  let monthly = {};
+  months.forEach(m => {
+    const days = RAW_DATA.days_in_month[m];
+    monthly[m] = { orders:0, gmv:0, menu_sessions:0, cart_sessions:0, payment_sessions:0,
+      total_discount:0, cpc_burn:0, nu_orders:0, ru_orders:0, p1_orders:0, p2_orders:0, p3_orders:0,
+      r_burn:0, s_burn:0, impression:0, discounted_orders:0, total_users:0,
+      breakfast_orders:0, lunch_orders:0, snacks_orders:0, dinner_orders:0, days };
+    brandNames.forEach(b => {
+      const md = brands[b].monthly[m];
+      if (!md) return;
+      monthly[m].orders += md.orders;
+      monthly[m].gmv += md.gmv;
+      monthly[m].menu_sessions += md.menu_sessions;
+      monthly[m].cart_sessions += md.cart_sessions;
+      monthly[m].payment_sessions += md.payment_sessions;
+      monthly[m].total_discount += md.total_discount;
+      monthly[m].cpc_burn += md.cpc_burn;
+      monthly[m].nu_orders += md.nu_orders;
+      monthly[m].ru_orders += md.ru_orders;
+      monthly[m].p1_orders += md.p1_orders;
+      monthly[m].p2_orders += md.p2_orders;
+      monthly[m].p3_orders += md.p3_orders;
+      monthly[m].r_burn += md.r_burn;
+      monthly[m].s_burn += md.s_burn;
+      monthly[m].impression += md.impression;
+      monthly[m].discounted_orders += md.discounted_orders;
+      monthly[m].total_users += md.total_users;
+      monthly[m].breakfast_orders += md.breakfast_orders;
+      monthly[m].lunch_orders += md.lunch_orders;
+      monthly[m].snacks_orders += md.snacks_orders;
+      monthly[m].dinner_orders += md.dinner_orders;
+    });
+  });
+  
+  const metricRows = [
+    ['Orders', m => monthly[m].orders, fmt],
+    ['OPD (Orders/Days)', m => monthly[m].orders / monthly[m].days, fmtOPD],
+    ['GMV', m => monthly[m].gmv, fmt],
+    ['AOV (GMV/Orders)', m => monthly[m].orders > 0 ? monthly[m].gmv/monthly[m].orders : 0, n => fmt(n,0)],
+    ['Menu Sessions', m => monthly[m].menu_sessions, fmt],
+    ['Cart Sessions', m => monthly[m].cart_sessions, fmt],
+    ['Payment Sessions', m => monthly[m].payment_sessions, fmt],
+    ['M2O%', m => monthly[m].menu_sessions > 0 ? monthly[m].orders/monthly[m].menu_sessions*100 : 0, fmtPct],
+    ['Total Users', m => monthly[m].total_users, fmt],
+    ['NU Orders', m => monthly[m].nu_orders, fmt],
+    ['RU Orders', m => monthly[m].ru_orders, fmt],
+    ['NU Order%', m => monthly[m].orders > 0 ? monthly[m].nu_orders/monthly[m].orders*100 : 0, fmtPct],
+    ['P1 Orders', m => monthly[m].p1_orders, fmt],
+    ['P2 Orders', m => monthly[m].p2_orders, fmt],
+    ['P3 Orders', m => monthly[m].p3_orders, fmt],
+    ['P1%', m => monthly[m].orders > 0 ? monthly[m].p1_orders/monthly[m].orders*100 : 0, fmtPct],
+    ['Total Discount', m => monthly[m].total_discount, fmt],
+    ['Disc% of GMV', m => monthly[m].gmv > 0 ? monthly[m].total_discount/monthly[m].gmv*100 : 0, fmtPct],
+    ['R Burn', m => monthly[m].r_burn, fmt],
+    ['S Burn', m => monthly[m].s_burn, fmt],
+    ['CPC Burn', m => monthly[m].cpc_burn, fmt],
+    ['CPC MS%', m => monthly[m].menu_sessions > 0 ? monthly[m].impression/monthly[m].menu_sessions*100 : 0, fmtPct],
+    ['Breakfast Orders', m => monthly[m].breakfast_orders, fmt],
+    ['Lunch Orders', m => monthly[m].lunch_orders, fmt],
+    ['Snacks Orders', m => monthly[m].snacks_orders, fmt],
+    ['Dinner Orders', m => monthly[m].dinner_orders, fmt],
+  ];
+  
+  let thead = `<tr><th>Metric</th>${months.map(m => `<th>${m}</th>`).join('')}<th>MoM</th></tr>`;
+  let tbody = metricRows.map(([label, fn, fmtFn]) => {
+    const vals = months.map(m => fn(m));
+    const momCell = vals.length >= 2 ? mom(vals[vals.length-1], vals[vals.length-2]) : '-';
+    return `<tr><td>${label}</td>${vals.map(v => `<td>${fmtFn(v)}</td>`).join('')}<td>${momCell}</td></tr>`;
+  }).join('');
+  
+  document.getElementById('analytics-table').innerHTML = `<thead>${thead}</thead><tbody>${tbody}</tbody>`;
+}
+
+// ===== SDLW TAB =====
+function renderSdlwTab() {
+  const entityFilter = document.getElementById('sdlw-entity-filter').value;
+  const metricFilter = document.getElementById('sdlw-metric-filter').value;
+  const sdlwData = RAW_DATA.sdlw;
+  const sdlwDates = RAW_DATA.sdlw_dates;
+  const sdlwLabels = RAW_DATA.sdlw_labels;
+  
+  const brandNames = Object.keys(sdlwData).filter(b => entityFilter === 'all' || sdlwData[b].entity === entityFilter);
+  
+  let getVal = (brand, date) => {
+    const d = sdlwData[brand].daily[date];
+    if (!d) return 0;
+    if (metricFilter === 'orders') return d.orders;
+    if (metricFilter === 'gmv') return d.gmv;
+    if (metricFilter === 'sessions') return d.menu_sessions;
+    if (metricFilter === 'm2o') return d.m2o_pct;
+    return d.orders;
+  };
+  
+  const fmtFn = metricFilter === 'm2o' ? fmtPct : fmt;
+  
+  let thead = `<tr><th>Brand</th>${sdlwLabels.map(l => `<th>${l}</th>`).join('')}</tr>`;
+  
+  let tbody = brandNames.map(brand => {
+    const vals = sdlwDates.map(d => getVal(brand, d));
+    const cells = vals.map((v, i) => {
+      if (i === 0) return `<td style="font-weight:700;color:#fff">${fmtFn(v)}</td>`;
+      const pct = vals[0] > 0 ? ((vals[0] - v) / v * 100) : 0;
+      const cls = pct >= 0 ? 'mom-positive' : 'mom-negative';
+      return `<td>${fmtFn(v)} <span class="${cls}" style="font-size:10px">${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%</span></td>`;
+    }).join('');
+    return `<tr><td>${brand}</td>${cells}</tr>`;
+  }).join('');
+  
+  // Total row
+  const totals = sdlwDates.map(d => brandNames.reduce((s, b) => s + getVal(b, d), 0));
+  const totalCells = totals.map((v, i) => {
+    if (i === 0) return `<td>${fmtFn(v)}</td>`;
+    const pct = totals[0] > 0 ? ((totals[0] - v) / v * 100) : 0;
+    const cls = pct >= 0 ? 'mom-positive' : 'mom-negative';
+    return `<td>${fmtFn(v)} <span class="${cls}" style="font-size:10px">${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%</span></td>`;
+  }).join('');
+  tbody += `<tr class="total-row"><td>TOTAL</td>${totalCells}</tr>`;
+  
+  document.getElementById('sdlw-table').innerHTML = `<thead>${thead}</thead><tbody>${tbody}</tbody>`;
+}
+
+// ===== INIT =====
+renderOverview();
+initCityFilter();
+initPidFilter();
+
+</script>
+</body>
+</html>
