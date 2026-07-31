@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What is AI? — A Video for Kids</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0d0d2b;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  #video-container {
+    width: 800px;
+    height: 500px;
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(100,180,255,0.4);
+  }
+
+  .scene {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    padding: 30px;
+  }
+  .scene.active { opacity: 1; }
+
+  #scene1 { background: linear-gradient(135deg, #1a1a6e, #2d5be3, #7b2ff7); }
+  #scene2 { background: linear-gradient(135deg, #0f3d0f, #1a7a1a, #2ecc71); }
+  #scene3 { background: linear-gradient(135deg, #4a0000, #c0392b, #e74c3c); }
+  #scene4 { background: linear-gradient(135deg, #1a0a3d, #6c3483, #a569bd); }
+  #scene5 { background: linear-gradient(135deg, #0d3349, #1a6e9f, #3498db); }
+  #scene6 { background: linear-gradient(135deg, #4d2600, #c06800, #f39c12); }
+
+  .scene-title { font-size: 2rem; font-weight: 900; color: #fff; text-align: center; text-shadow: 0 2px 10px rgba(0,0,0,0.5); margin-bottom: 16px; }
+  .scene-text { font-size: 1.15rem; color: rgba(255,255,255,0.92); text-align: center; line-height: 1.7; max-width: 640px; }
+  .emoji-stage { font-size: 5rem; margin-bottom: 20px; animation: bounce 1s ease infinite alternate; }
+  .emoji-row { display: flex; gap: 16px; font-size: 3.2rem; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+  .highlight { background: rgba(255,255,255,0.2); border-radius: 8px; padding: 2px 10px; font-weight: 700; color: #ffe066; }
+  .brain-container { position: relative; font-size: 5rem; margin-bottom: 16px; }
+  .pulse-ring { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90px; height: 90px; border: 3px solid rgba(255,255,255,0.5); border-radius: 50%; animation: pulse-out 1.5s ease-out infinite; }
+  .pulse-ring:nth-child(2) { animation-delay: 0.5s; }
+  .pulse-ring:nth-child(3) { animation-delay: 1s; }
+  .data-stream { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; max-width: 600px; }
+  .data-bit { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: white; animation: dataFall 0.5s ease both; }
+  .data-bit:nth-child(odd) { background: rgba(255,255,255,0.25); }
+  .data-bit:nth-child(even) { background: rgba(255,255,255,0.1); }
+  .pattern-grid { display: grid; grid-template-columns: repeat(7, 36px); gap: 8px; margin-bottom: 20px; }
+  .pattern-dot { width: 36px; height: 36px; border-radius: 50%; animation: glow 0.6s ease both; }
+  #progress-bar-container { width: 800px; margin-top: 16px; }
+  #progress-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.15); border-radius: 4px; overflow: hidden; }
+  #progress-fill { height: 100%; background: linear-gradient(90deg, #4fc3f7, #a78bfa); border-radius: 4px; width: 0%; transition: width 0.3s linear; }
+  #scene-label { color: rgba(255,255,255,0.5); font-size: 0.8rem; margin-top: 6px; text-align: right; }
+  #controls { margin-top: 16px; display: flex; gap: 12px; }
+  #replay-btn { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); color: white; padding: 8px 24px; border-radius: 24px; font-size: 1rem; cursor: pointer; display: none; }
+  #end-card { display: none; position: absolute; width: 100%; height: 100%; background: linear-gradient(135deg, #0d0d2b, #1a1a6e); flex-direction: column; align-items: center; justify-content: center; }
+  #end-card.visible { display: flex; }
+  #end-card .big-emoji { font-size: 4rem; margin-bottom: 12px; }
+  #end-card h2 { color: #ffe066; font-size: 2.2rem; margin-bottom: 12px; }
+  #end-card p { color: rgba(255,255,255,0.8); font-size: 1.1rem; text-align: center; max-width: 500px; line-height: 1.6; }
+  .star { position: absolute; background: white; border-radius: 50%; animation: starTwinkle var(--dur) var(--delay) ease-in-out infinite; pointer-events: none; }
+  @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
+  @keyframes pulse-out { 0% { transform: translate(-50%,-50%) scale(0.5); opacity: 0.8; } 100% { transform: translate(-50%,-50%) scale(2.5); opacity: 0; } }
+  @keyframes dataFall { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes glow { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes starTwinkle { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<div id="video-container">
+  <div class="scene" id="scene1">
+    <div class="emoji-stage">🤖</div>
+    <div class="scene-title">Meet AI — Artificial Intelligence!</div>
+    <div class="scene-text">AI is a <span class="highlight">computer program</span> that can learn, think, and solve problems — kind of like a super-smart digital brain that gets better every day!</div>
+  </div>
+  <div class="scene" id="scene2">
+    <div class="data-stream" id="dataStream"></div>
+    <div class="scene-title">How Does AI Learn?</div>
+    <div class="scene-text">AI learns by looking at <span class="highlight">millions of examples</span>.<br>Show it 10,000 pictures of dogs… and soon it knows exactly what a dog looks like! 🐶</div>
+  </div>
+  <div class="scene" id="scene3">
+    <div class="pattern-grid" id="patternGrid"></div>
+    <div class="scene-title">AI Loves Patterns! 🔍</div>
+    <div class="scene-text">AI finds hidden patterns in data — in images, words, and numbers. That's how it can <span class="highlight">recognise your face</span>, understand your voice, or predict the weather!</div>
+  </div>
+  <div class="scene" id="scene4">
+    <div class="emoji-row"><span>🎮</span><span>📱</span><span>🎵</span><span>🗣️</span><span>🛒</span></div>
+    <div class="scene-title">AI is Already in Your Life!</div>
+    <div class="scene-text">Video game bots, Siri & Alexa, music recommendations, autocorrect on your phone… <span class="highlight">You use AI every single day</span> without even realising it!</div>
+  </div>
+  <div class="scene" id="scene5">
+    <div class="brain-container"><span style="font-size:5rem">🧠</span><div class="pulse-ring"></div><div class="pulse-ring"></div><div class="pulse-ring"></div></div>
+    <div class="scene-title">AI Can Be Wrong Too!</div>
+    <div class="scene-text">AI is powerful — but not perfect. It needs <span class="highlight">good data</span> and <span class="highlight">human guidance</span>. Teaching AI to be fair, safe, and helpful is one of the most important jobs of the future!</div>
+  </div>
+  <div class="scene" id="scene6">
+    <div class="emoji-row"><span>👩‍💻</span><span>🚀</span><span>🌍</span></div>
+    <div class="scene-title">You Can Build AI Too!</div>
+    <div class="scene-text">Coders, artists, scientists, writers — <span class="highlight">every skill</span> helps shape AI. The future of AI is being built by the generation growing up with it. That's <em>you</em>!</div>
+  </div>
+  <div id="end-card"><div class="big-emoji">🌟</div><h2>Now You Know AI!</h2><p>Artificial Intelligence is a tool — and tools are only as powerful as the people who use them wisely. Keep learning, keep creating!</p></div>
+</div>
+<div id="progress-bar-container"><div id="progress-bg"><div id="progress-fill"></div></div><div id="scene-label">Scene 1 / 6</div></div>
+<div id="controls"><button id="replay-btn" onclick="restartVideo()">↩ Replay</button></div>
+<script>
+  const starsContainer = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div'); s.className = 'star';
+    const size = Math.random() * 2.5 + 1;
+    s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}vh;left:${Math.random()*100}vw;--dur:${(Math.random()*2+1.5).toFixed(1)}s;--delay:${(Math.random()*3).toFixed(1)}s;`;
+    starsContainer.appendChild(s);
+  }
+  const ds = document.getElementById('dataStream');
+  ['🐱','🐶','🌸','🍎','✈️','🎸','🏠','⚽','📚','🌈','🐘','🦋'].forEach((em,i)=>{ const b=document.createElement('div');b.className='data-bit';b.style.animationDelay=(i*0.07)+'s';b.style.fontSize='1.3rem';b.textContent=em;ds.appendChild(b); });
+  const pg = document.getElementById('patternGrid');
+  ['#e74c3c','#f39c12','#2ecc71','#3498db','#9b59b6','#1abc9c','#e67e22'].forEach((c,ci)=>{ for(let r=0;r<3;r++){const d=document.createElement('div');d.className='pattern-dot';d.style.cssText=`background:${c};opacity:${r===1&&ci%2===0?'1':r===0?'0.4':'0.7'};animation-delay:${(r*7+ci)*0.05}s`;pg.appendChild(d);} });
+  const SCENES=6,SCENE_DURATION=10000,TOTAL=60000;
+  let currentScene=0,startTime=null,rafId=null;
+  function showScene(n){document.querySelectorAll('.scene').forEach((s,i)=>s.classList.toggle('active',i===n));document.getElementById('scene-label').textContent=`Scene ${n+1} / ${SCENES}`;}
+  function tick(ts){if(!startTime)startTime=ts;const elapsed=ts-startTime;document.getElementById('progress-fill').style.width=(Math.min(elapsed/TOTAL,1)*100)+'%';const sceneIndex=Math.min(Math.floor(elapsed/SCENE_DURATION),SCENES-1);if(sceneIndex!==currentScene){currentScene=sceneIndex;showScene(currentScene);}if(elapsed>=TOTAL){document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));document.getElementById('end-card').classList.add('visible');document.getElementById('replay-btn').style.display='inline-block';return;}rafId=requestAnimationFrame(tick);}
+  function startVideo(){currentScene=0;startTime=null;document.getElementById('end-card').classList.remove('visible');document.getElementById('replay-btn').style.display='none';document.getElementById('progress-fill').style.width='0%';showScene(0);if(rafId)cancelAnimationFrame(rafId);rafId=requestAnimationFrame(tick);}
+  function restartVideo(){startVideo();}
+  window.addEventListener('load',()=>setTimeout(startVideo,400));
+</script>
+</body>
+</html>
